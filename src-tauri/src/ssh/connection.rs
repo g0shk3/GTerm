@@ -81,31 +81,25 @@ impl SshConnection {
             let mut read_chan = read_channel;
 
             loop {
-                // Check for shutdown signal
+                // Check for shutdown signal before each read
                 if *shutdown_rx.borrow() {
                     break;
                 }
 
-                // Set read timeout to allow periodic shutdown checks
-                read_chan.set_read_timeout(Some(std::time::Duration::from_millis(100))).ok();
-
+                // Blocking read from SSH channel
                 match read_chan.read(&mut buffer) {
                     Ok(0) => {
-                        // Connection closed
+                        // Connection closed gracefully
                         let _ = app_handle.emit(&format!("ssh-closed:{}", session_id), ());
                         break;
                     }
                     Ok(n) => {
+                        // Data received, emit to frontend
                         let data = String::from_utf8_lossy(&buffer[..n]).to_string();
                         let _ = app_handle.emit(&format!("ssh-output:{}", session_id), data);
                     }
-                    Err(e) if e.kind() == std::io::ErrorKind::WouldBlock
-                            || e.kind() == std::io::ErrorKind::TimedOut => {
-                        // Timeout, check shutdown signal again
-                        continue;
-                    }
                     Err(_) => {
-                        // Real error
+                        // Error reading (connection lost or channel closed)
                         let _ = app_handle.emit(&format!("ssh-error:{}", session_id), "Read error");
                         break;
                     }
