@@ -87,6 +87,13 @@ async fn ssh_resize(
 }
 
 #[tauri::command]
+async fn get_home_dir() -> Result<String, String> {
+    dirs::home_dir()
+        .and_then(|p| p.to_str().map(|s| s.to_string()))
+        .ok_or_else(|| "Failed to get home directory".to_string())
+}
+
+#[tauri::command]
 async fn get_private_key_type(path: String) -> Result<String, String> {
     get_key_type(&path).map_err(|e| e.to_string())
 }
@@ -156,6 +163,7 @@ fn main() {
             ssh_send_input,
             ssh_disconnect,
             ssh_resize,
+            get_home_dir,
             get_private_key_type,
             generate_keypair,
             sftp_list_directory,

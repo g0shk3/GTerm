@@ -45,7 +45,7 @@
     try {
       const keyType = await invoke('get_private_key_type', { path });
       if (keyType === 'rsa') {
-        keyTypeWarning = '⚠️ RSA ключът е остарял. Препоръчваме ed25519.';
+        keyTypeWarning = '⚠️ Warning: RSA keys are outdated. We recommend using ed25519.';
       } else {
         keyTypeWarning = '';
       }
@@ -67,15 +67,15 @@
 
       // Copy public key to clipboard
       await navigator.clipboard.writeText(publicKey);
-      alert('Нов ed25519 ключ е генериран!\nПубличният ключ е копиран в clipboard.');
+      alert('New ed25519 key generated successfully!\nPublic key has been copied to clipboard.');
     } catch (error) {
-      alert('Грешка при генериране на ключ: ' + error);
+      alert('Error generating key: ' + error);
     }
   }
 
   async function handleSave() {
     if (!form.name || !form.host || !form.username || !form.privateKeyPath) {
-      alert('Моля, попълнете всички задължителни полета');
+      alert('Please fill in all required fields');
       return;
     }
 
@@ -89,7 +89,7 @@
   }
 
   async function handleDelete(id) {
-    if (confirm('Сигурни ли сте, че искате да изтриете този хост?')) {
+    if (confirm('Are you sure you want to delete this host?')) {
       hosts = await deleteHost(id);
       if (selectedHost?.id === id) {
         resetForm();

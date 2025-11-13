@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 
 export const tabs = writable([]);
 export const activeTabId = writable(null);
@@ -30,13 +30,11 @@ export function closeTab(id) {
 
   activeTabId.update(current => {
     if (current === id) {
-      let newActive = null;
-      tabs.subscribe(t => {
-        if (t.length > 0) {
-          newActive = t[t.length - 1].id;
-        }
-      })();
-      return newActive;
+      const currentTabs = get(tabs);
+      if (currentTabs.length > 0) {
+        return currentTabs[currentTabs.length - 1].id;
+      }
+      return null;
     }
     return current;
   });
