@@ -21,6 +21,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "GTerm - SSH Terminal",
         "width": 1200,
         "height": 800,
@@ -42,7 +43,8 @@
           "allow": ["$APPDATA/**", "$HOME/.ssh/**"],
           "deny": []
         }
-      }
+      },
+      "capabilities": ["main-capability"]
     }
   }
 }
