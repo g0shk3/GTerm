@@ -1,10 +1,12 @@
 <script>
   import { onMount, createEventDispatcher } from 'svelte';
-  import { getHosts, saveHost, deleteHost } from '../stores/hosts';
+  import { getHosts, addAndReloadHost, removeAndReloadHost } from '../stores/hosts';
   import { open } from '@tauri-apps/plugin-dialog';
   import { invoke } from '@tauri-apps/api/core';
 
   const dispatch = createEventDispatcher();
+
+  export let editingHost = null;
 
   let hosts = [];
   let selectedHost = null;
@@ -23,6 +25,12 @@
 
   onMount(async () => {
     hosts = await getHosts();
+
+    // Ако има редактиран профил, попълни формата
+    if (editingHost) {
+      form = { ...editingHost };
+      editMode = true;
+    }
   });
 
   async function handleSelectKeyFile() {
@@ -84,13 +92,13 @@
       id: form.id || `host-${Date.now()}`,
     };
 
-    hosts = await saveHost(host);
+    hosts = await addAndReloadHost(host);
     resetForm();
   }
 
   async function handleDelete(id) {
     if (confirm('Are you sure you want to delete this host?')) {
-      hosts = await deleteHost(id);
+      hosts = await removeAndReloadHost(id);
       if (selectedHost?.id === id) {
         resetForm();
       }
@@ -136,38 +144,6 @@
     </div>
 
     <div class="modal-body">
-      <!-- Saved Hosts List -->
-      <div class="hosts-section">
-        <h3 class="text-lg font-semibold mb-3">Saved Hosts</h3>
-        {#if hosts.length === 0}
-          <p class="text-gray-500 dark:text-gray-400 text-sm">No saved hosts yet</p>
-        {:else}
-          <div class="hosts-list">
-            {#each hosts as host (host.id)}
-              <div class="host-item">
-                <div class="host-info">
-                  <div class="font-medium">{host.name}</div>
-                  <div class="text-sm text-gray-600 dark:text-gray-400">
-                    {host.username}@{host.host}:{host.port}
-                  </div>
-                </div>
-                <div class="host-actions">
-                  <button class="btn-sm btn-primary" on:click={() => handleConnect(host)}>
-                    Connect
-                  </button>
-                  <button class="btn-sm btn-secondary" on:click={() => handleEdit(host)}>
-                    Edit
-                  </button>
-                  <button class="btn-sm btn-danger" on:click={() => handleDelete(host.id)}>
-                    Delete
-                  </button>
-                </div>
-              </div>
-            {/each}
-          </div>
-        {/if}
-      </div>
-
       <!-- Add/Edit Form -->
       <div class="form-section">
         <h3 class="text-lg font-semibold mb-3">
@@ -277,41 +253,28 @@
   }
 
   .modal-content {
-    @apply bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col;
+    @apply bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-hidden flex flex-col;
     margin: 20px;
   }
 
   .modal-header {
-    @apply flex items-center justify-between p-4 border-b border-gray-300 dark:border-gray-700;
+    @apply flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700;
+  }
+
+  .modal-header h2 {
+    @apply text-lg font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent;
   }
 
   .close-btn {
-    @apply text-3xl leading-none hover:text-red-500 transition-colors;
+    @apply text-2xl leading-none text-gray-600 dark:text-gray-400 hover:text-red-500 transition-colors font-light;
   }
 
   .modal-body {
-    @apply p-4 overflow-y-auto flex-1 grid grid-cols-2 gap-6;
+    @apply p-6 overflow-y-auto flex-1;
   }
 
-  .hosts-section,
   .form-section {
     @apply flex flex-col;
-  }
-
-  .hosts-list {
-    @apply space-y-2;
-  }
-
-  .host-item {
-    @apply p-3 bg-gray-100 dark:bg-gray-700 rounded-md flex items-center justify-between;
-  }
-
-  .host-info {
-    @apply flex-1;
-  }
-
-  .host-actions {
-    @apply flex gap-2;
   }
 
   .form-group {
@@ -323,7 +286,7 @@
   }
 
   label {
-    @apply block text-sm font-medium mb-1;
+    @apply block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300;
   }
 
   input {
@@ -331,7 +294,7 @@
   }
 
   .form-actions {
-    @apply flex gap-2 mt-6;
+    @apply flex gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700;
   }
 
   .btn-primary {

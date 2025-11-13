@@ -42,3 +42,21 @@ export async function deleteHost(id) {
 }
 
 export const hostsStore = writable([]);
+
+export async function loadHosts() {
+  const hosts = await getHosts();
+  hostsStore.set(hosts);
+  return hosts;
+}
+
+export async function addAndReloadHost(host) {
+  const hosts = await saveHost(host);
+  hostsStore.set(hosts);
+  return hosts;
+}
+
+export async function removeAndReloadHost(id) {
+  const hosts = await deleteHost(id);
+  hostsStore.set(hosts);
+  return hosts;
+}

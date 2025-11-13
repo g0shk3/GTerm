@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { theme } from './lib/stores/theme';
   import { tabs, activeTabId, createTab, closeTab } from './lib/stores/tabs';
-  import { hostsStore } from './lib/stores/hosts';
+  import { hostsStore, loadHosts } from './lib/stores/hosts';
   import HostManager from './lib/components/HostManager.svelte';
   import Terminal from './lib/components/Terminal.svelte';
   import SFTP from './lib/components/SFTP.svelte';
@@ -11,12 +11,30 @@
   let showHostManager = false;
   let currentView = 'welcome'; // 'welcome', 'tabs'
   let sidebarOpen = true;
+  let editingHost = null;
+  let keyboardShortcutsRegistered = false;
 
-  onMount(() => {
+  onMount(async () => {
     // Initialize theme
     if ($theme === 'dark') {
       document.documentElement.classList.add('dark');
     }
+
+    // Load saved hosts
+    await loadHosts();
+
+    // Register keyboard shortcuts (only once)
+    if (!keyboardShortcutsRegistered) {
+      document.addEventListener('keydown', keyboardHandler);
+      keyboardShortcutsRegistered = true;
+    }
+
+    return () => {
+      if (keyboardShortcutsRegistered) {
+        document.removeEventListener('keydown', keyboardHandler);
+        keyboardShortcutsRegistered = false;
+      }
+    };
   });
 
   function toggleTheme() {
@@ -36,6 +54,12 @@
     currentView = 'tabs';
   }
 
+  function handleSidebarEdit(event) {
+    const host = event.detail;
+    editingHost = host;
+    showHostManager = true;
+  }
+
   function handleCloseTab(tabId) {
     closeTab(tabId);
     if ($tabs.length === 0) {
@@ -47,6 +71,32 @@
     activeTabId.set(tabId);
   }
 
+  const keyboardHandler = (e) => {
+    // Cmd+W - затвори текущия таб
+    if (e.metaKey && e.key === 'w') {
+      e.preventDefault();
+      handleCloseTab($activeTabId);
+      return;
+    }
+
+    // Cmd+Q - затвори приложението
+    if (e.metaKey && e.key === 'q') {
+      e.preventDefault();
+      window.close();
+      return;
+    }
+
+    // Cmd+Shift+D - дупликат на сесията
+    if (e.metaKey && e.shiftKey && (e.key === 'D' || e.key === 'd')) {
+      e.preventDefault();
+      const currentTab = $tabs.find(t => t.id === $activeTabId);
+      if (currentTab) {
+        createTab(currentTab.host);
+      }
+      return;
+    }
+  };
+
   $: activeTab = $tabs.find(t => t.id === $activeTabId);
 </script>
 
@@ -55,48 +105,36 @@
   <header class="modern-header">
     <div class="header-center">
       <!-- Modern Tabs -->
-      {#if $tabs.length > 0}
-        <div class="modern-tabs">
-          {#each $tabs as tab (tab.id)}
-            <button
-              class="modern-tab"
-              class:active={tab.id === $activeTabId}
-              on:click={() => switchTab(tab.id)}
-            >
-              <div class="tab-content-wrapper">
-                <span
-                  class="tab-indicator"
-                  class:connected={tab.connected}
-                  class:disconnected={!tab.connected}
-                />
-                <span class="tab-label">{tab.title}</span>
-                <button
-                  class="tab-close-btn"
-                  on:click|stopPropagation={() => handleCloseTab(tab.id)}
-                  title="Close"
-                >
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 3l8 8M11 3l-8 8" />
-                  </svg>
-                </button>
-              </div>
-            </button>
-          {/each}
-        </div>
-      {/if}
+      <div class="modern-tabs">
+        {#each $tabs as tab (tab.id)}
+          <button
+            class="modern-tab"
+            class:active={tab.id === $activeTabId}
+            on:click={() => switchTab(tab.id)}
+          >
+            <div class="tab-content-wrapper">
+              <span
+                class="tab-indicator"
+                class:connected={tab.connected}
+                class:disconnected={!tab.connected}
+              />
+              <span class="tab-label">{tab.title}</span>
+              <button
+                class="tab-close-btn"
+                on:click|stopPropagation={() => handleCloseTab(tab.id)}
+                title="Close"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 3l8 8M11 3l-8 8" />
+                </svg>
+              </button>
+            </div>
+          </button>
+        {/each}
+      </div>
     </div>
 
     <div class="header-right">
-      <button
-        on:click={() => { showHostManager = true; currentView = 'tabs'; }}
-        class="header-btn new-connection-btn"
-        title="New Connection"
-      >
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M9 3v12M3 9h12" />
-        </svg>
-        <span>New</span>
-      </button>
       <button on:click={() => sidebarOpen = !sidebarOpen} class="header-btn" title="Toggle connections">
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="2" y="3" width="14" height="12" rx="2" />
@@ -161,15 +199,17 @@
     <Sidebar
       bind:isOpen={sidebarOpen}
       on:connect={handleSidebarConnect}
-      on:manage={() => showHostManager = true}
+      on:edit={handleSidebarEdit}
+      on:manage={() => { showHostManager = true; editingHost = null; }}
     />
   </div>
 
   <!-- Host Manager Modal -->
   {#if showHostManager}
     <HostManager
+      {editingHost}
       on:connect={handleNewConnection}
-      on:close={() => showHostManager = false}
+      on:close={() => { showHostManager = false; editingHost = null; }}
     />
   {/if}
 </div>
