@@ -4,13 +4,13 @@
 mod ssh;
 
 use ssh::{
-    connection::{SshConnection, SshConnectionManager},
+    connection::SshConnection,
     keygen::{generate_ed25519_keypair, get_key_type},
     sftp::{list_directory, download_file, upload_file},
 };
 use std::collections::HashMap;
 use std::sync::Arc;
-use tauri::{Manager, State};
+use tauri::State;
 use tokio::sync::Mutex;
 
 pub struct AppState {

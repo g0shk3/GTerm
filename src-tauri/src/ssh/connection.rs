@@ -4,7 +4,7 @@ use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::path::Path;
 use std::sync::Arc;
-use tauri::Manager;
+use tauri::Emitter;
 use tokio::sync::{Mutex, watch};
 
 #[derive(Clone)]
@@ -63,7 +63,7 @@ impl SshConnection {
         channel.handle_extended_data(ssh2::ExtendedData::Merge)?;
 
         // Clone channel for reading
-        let read_channel = channel.try_clone()?;
+        let read_channel = channel.clone();
 
         // Store session and write channel
         *self.session.lock().await = Some(session);

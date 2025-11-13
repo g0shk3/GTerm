@@ -1,10 +1,7 @@
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
-use ssh2::Session;
 use std::io::{Read, Write};
 use std::path::Path;
-use std::sync::Arc;
-use tokio::sync::Mutex;
 
 use super::connection::SshConnectionManager;
 
