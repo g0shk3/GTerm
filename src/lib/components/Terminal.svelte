@@ -28,7 +28,7 @@
       theme: {
         background: '#1a1a1a',
         foreground: '#ffffff',
-        cursor: '#00ff00',
+        cursor: '#d0d0d0',
         selection: 'rgba(255, 255, 255, 0.3)',
         black: '#000000',
         red: '#ff5555',

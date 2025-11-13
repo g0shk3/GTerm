@@ -44,7 +44,7 @@ impl SshConnection {
         session.set_tcp_stream(tcp.try_clone()?);
         session.handshake()?;
 
-        // Authenticate with private key
+        // Authenticate with private key (in blocking mode)
         let key_path = Path::new(&private_key_path);
         if let Some(pass) = passphrase.as_ref() {
             session.userauth_pubkey_file(&username, None, key_path, Some(pass))?;
@@ -62,6 +62,9 @@ impl SshConnection {
         channel.shell()?;
         channel.handle_extended_data(ssh2::ExtendedData::Merge)?;
 
+        // NOW set session to non-blocking mode for I/O operations
+        session.set_blocking(false);
+
         // Clone channel for reading
         let read_channel = channel.clone();
 
@@ -71,7 +74,7 @@ impl SshConnection {
         *self.write_channel.lock().await = Some(channel);
 
         // Create shutdown channel
-        let (shutdown_tx, mut shutdown_rx) = watch::channel(false);
+        let (shutdown_tx, shutdown_rx) = watch::channel(false);
         *self.shutdown_tx.lock().await = Some(shutdown_tx);
 
         // Start output reader in background with separate read channel
@@ -86,7 +89,7 @@ impl SshConnection {
                     break;
                 }
 
-                // Blocking read from SSH channel
+                // Non-blocking read from SSH channel
                 match read_chan.read(&mut buffer) {
                     Ok(0) => {
                         // Connection closed gracefully
@@ -97,6 +100,11 @@ impl SshConnection {
                         // Data received, emit to frontend
                         let data = String::from_utf8_lossy(&buffer[..n]).to_string();
                         let _ = app_handle.emit(&format!("ssh-output:{}", session_id), data);
+                    }
+                    Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                        // No data available, sleep briefly and retry
+                        std::thread::sleep(std::time::Duration::from_millis(10));
+                        continue;
                     }
                     Err(_) => {
                         // Error reading (connection lost or channel closed)
@@ -161,16 +169,6 @@ impl SshConnection {
     }
 
     pub async fn get_session(&self) -> Arc<Mutex<Option<Session>>> {
-        self.session.clone()
-    }
-}
-
-pub trait SshConnectionManager {
-    async fn get_session(&self) -> Arc<Mutex<Option<Session>>>;
-}
-
-impl SshConnectionManager for SshConnection {
-    async fn get_session(&self) -> Arc<Mutex<Option<Session>>> {
         self.session.clone()
     }
 }

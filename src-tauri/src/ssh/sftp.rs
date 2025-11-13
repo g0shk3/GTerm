@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 use std::path::Path;
 
-use super::connection::SshConnectionManager;
+use super::connection::SshConnection;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileEntry {
@@ -15,8 +15,8 @@ pub struct FileEntry {
     pub permissions: u32,
 }
 
-pub async fn list_directory<T: SshConnectionManager>(
-    connection: &T,
+pub async fn list_directory(
+    connection: &SshConnection,
     path: &str,
 ) -> Result<Vec<FileEntry>> {
     let session_arc = connection.get_session().await;
@@ -62,8 +62,8 @@ pub async fn list_directory<T: SshConnectionManager>(
     Ok(entries)
 }
 
-pub async fn download_file<T: SshConnectionManager>(
-    connection: &T,
+pub async fn download_file(
+    connection: &SshConnection,
     remote_path: &str,
     local_path: &str,
 ) -> Result<()> {
@@ -91,8 +91,8 @@ pub async fn download_file<T: SshConnectionManager>(
     Ok(())
 }
 
-pub async fn upload_file<T: SshConnectionManager>(
-    connection: &T,
+pub async fn upload_file(
+    connection: &SshConnection,
     local_path: &str,
     remote_path: &str,
 ) -> Result<()> {
