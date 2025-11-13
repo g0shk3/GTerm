@@ -1,0 +1,44 @@
+import { writable } from 'svelte/store';
+import { load } from '@tauri-apps/plugin-store';
+
+let store = null;
+
+async function initStore() {
+  if (!store) {
+    store = await load('hosts.json', { autoSave: true });
+  }
+  return store;
+}
+
+export async function getHosts() {
+  const s = await initStore();
+  const hosts = await s.get('hosts');
+  return hosts || [];
+}
+
+export async function saveHost(host) {
+  const s = await initStore();
+  const hosts = await getHosts();
+  const existingIndex = hosts.findIndex(h => h.id === host.id);
+
+  if (existingIndex >= 0) {
+    hosts[existingIndex] = host;
+  } else {
+    hosts.push(host);
+  }
+
+  await s.set('hosts', hosts);
+  await s.save();
+  return hosts;
+}
+
+export async function deleteHost(id) {
+  const s = await initStore();
+  const hosts = await getHosts();
+  const filtered = hosts.filter(h => h.id !== id);
+  await s.set('hosts', filtered);
+  await s.save();
+  return filtered;
+}
+
+export const hostsStore = writable([]);
