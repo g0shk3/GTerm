@@ -5,20 +5,24 @@
   import { Terminal as XTerm } from '@xterm/xterm';
   import { FitAddon } from '@xterm/addon-fit';
   import { WebLinksAddon } from '@xterm/addon-web-links';
+  import { SearchAddon } from '@xterm/addon-search';
   import '@xterm/xterm/css/xterm.css';
   import { updateTabConnection, activeTabId } from '../stores/tabs';
   import { getSnippets } from '../stores/snippets';
+  import Search from './Search.svelte';
 
   export let tab;
 
   let terminalElement;
   let terminal;
   let fitAddon;
+  let searchAddon;
   let unlistenOutput;
   let unlistenClosed;
   let unlistenError;
   let connecting = true;
   let errorMessage = '';
+  let showSearch = false;
 
   onMount(async () => {
     // Initialize xterm.js
@@ -52,11 +56,29 @@
     });
 
     fitAddon = new FitAddon();
+    searchAddon = new SearchAddon();
     terminal.loadAddon(fitAddon);
     terminal.loadAddon(new WebLinksAddon());
+    terminal.loadAddon(searchAddon);
 
     terminal.open(terminalElement);
     fitAddon.fit();
+
+    // Add find shortcut
+    terminal.attachCustomKeyEventHandler((event) => {
+      if (event.key === 'f' && (event.metaKey || event.ctrlKey) && event.type === 'keydown') {
+        event.preventDefault();
+        showSearch = true;
+        return false; // Prevent event from being processed further
+      }
+      if (event.key === 'Escape' && showSearch) {
+        event.preventDefault();
+        showSearch = false;
+        searchAddon.clearDecorations();
+        return false;
+      }
+      return true;
+    });
 
     // Handle user input
     terminal.onData(async (data) => {
@@ -254,6 +276,10 @@
 </script>
 
 <div class="terminal-wrapper">
+  {#if showSearch}
+    <Search {searchAddon} on:close={() => showSearch = false} />
+  {/if}
+
   {#if connecting}
     <div class="connecting-overlay">
       <div class="connecting-spinner"></div>
@@ -309,3 +335,4 @@
     @apply px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors;
   }
 </style>
+
