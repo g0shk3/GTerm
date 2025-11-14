@@ -1,6 +1,6 @@
 {
   "name": "gterm",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "Fast and secure macOS SSH Terminal built with Tauri 2.0",
   "type": "module",
   "scripts": {
