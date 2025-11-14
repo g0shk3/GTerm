@@ -8,7 +8,7 @@
 
 **Важна информация:**
 - Private key: `~/.tauri/gterm-keys`
-- Private key парола: `Krisko17!@`
+- Private key парола: **********
 - ⚠️ **НЕ commit-вай private key в Git!**
 
 ---

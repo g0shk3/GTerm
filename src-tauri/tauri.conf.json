@@ -1,6 +1,6 @@
 {
   "productName": "GTerm",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "identifier": "com.gterm.terminal",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -26,6 +26,7 @@
   },
   "plugins": {
     "updater": {
+      "active": true,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDU0OTgxNTEyMDNCNzZDNzIKUldSeWJMY0RFaFdZVkhlb2lwRVVKRDE1T1ZJLzMyUFFjUE9Ua2RLeVllcmlaQVhXQnhUYUlVV0wK",
       "endpoints": [
         "https://github.com/g0shk3/GTerm/releases/latest/download/latest.json"

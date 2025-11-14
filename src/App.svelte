@@ -142,7 +142,36 @@
   function handleTabContextMenu(event, tab) {
     event.preventDefault();
     event.stopPropagation();
-    tabContextMenu = { x: event.clientX, y: event.clientY };
+
+    // Calculate menu position with boundary checks
+    const menuWidth = 180;
+    const menuHeight = 120;
+    const padding = 10;
+
+    let x = event.clientX;
+    let y = event.clientY;
+
+    // Check right boundary
+    if (x + menuWidth > window.innerWidth - padding) {
+      x = window.innerWidth - menuWidth - padding;
+    }
+
+    // Check bottom boundary
+    if (y + menuHeight > window.innerHeight - padding) {
+      y = window.innerHeight - menuHeight - padding;
+    }
+
+    // Check left boundary
+    if (x < padding) {
+      x = padding;
+    }
+
+    // Check top boundary
+    if (y < padding) {
+      y = padding;
+    }
+
+    tabContextMenu = { x, y };
     contextMenuTab = tab;
   }
 
