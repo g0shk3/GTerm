@@ -60,3 +60,9 @@ export async function removeAndReloadHost(id) {
   hostsStore.set(hosts);
   return hosts;
 }
+
+export async function updateAndReloadHost(host) {
+  const hosts = await saveHost(host);
+  hostsStore.set(hosts);
+  return hosts;
+}

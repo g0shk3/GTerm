@@ -1,18 +1,71 @@
 <script>
-  import { createEventDispatcher } from 'svelte';
-  import { hostsStore } from '../stores/hosts';
+  import { createEventDispatcher, onMount } from 'svelte';
+  import { hostsStore, removeAndReloadHost, addAndReloadHost } from '../stores/hosts';
 
   export let isOpen = true;
 
   const dispatch = createEventDispatcher();
 
-  function selectHost(host) {
+  let selectedHostId = null;
+  let contextMenu = null;
+  let contextMenuHost = null;
+
+  onMount(() => {
+    // Close context menu when clicking anywhere
+    const handleClick = () => {
+      contextMenu = null;
+      contextMenuHost = null;
+    };
+    document.addEventListener('click', handleClick);
+
+    return () => {
+      document.removeEventListener('click', handleClick);
+    };
+  });
+
+  function markHost(event, host) {
+    event.preventDefault();
+    selectedHostId = host.id;
+  }
+
+  function connectHost(host) {
     dispatch('connect', host);
   }
 
   function editHost(event, host) {
     event.stopPropagation();
     dispatch('edit', host);
+    contextMenu = null;
+  }
+
+  async function duplicateHost(event, host) {
+    event.stopPropagation();
+    const duplicatedHost = {
+      ...host,
+      id: `host-${Date.now()}`,
+      name: `${host.name} (Copy)`
+    };
+    await addAndReloadHost(duplicatedHost);
+    contextMenu = null;
+  }
+
+  async function deleteHost(event, host) {
+    event.stopPropagation();
+    if (confirm(`Are you sure you want to delete "${host.name}"?`)) {
+      await removeAndReloadHost(host.id);
+      if (selectedHostId === host.id) {
+        selectedHostId = null;
+      }
+    }
+    contextMenu = null;
+  }
+
+  function handleContextMenu(event, host) {
+    event.preventDefault();
+    event.stopPropagation();
+    contextMenu = { x: event.clientX, y: event.clientY };
+    contextMenuHost = host;
+    selectedHostId = host.id;
   }
 
   function toggleSidebar() {
@@ -44,32 +97,24 @@
           </div>
         {:else}
           {#each $hostsStore as host (host.id)}
-            <div class="host-card-wrapper">
-              <button
-                class="host-card"
-                on:click={() => selectHost(host)}
-                title="Свързване към {host.name || host.host}"
-              >
-                <div class="host-icon">
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
-                  </svg>
-                </div>
-                <div class="host-info">
-                  <div class="host-name">{host.name || host.host}</div>
-                  <div class="host-details">{host.username}@{host.host}</div>
-                </div>
-              </button>
-              <button
-                class="host-edit-btn"
-                on:click={(e) => editHost(e, host)}
-                title="Редактиране"
-              >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M2 12.5v2.5h2.5L11.5 5.5M13.5 2.5l.707-.707a1.414 1.414 0 0 0-2-2L11.5 .5"/>
+            <button
+              class="host-card"
+              class:selected={selectedHostId === host.id}
+              on:click={(e) => markHost(e, host)}
+              on:dblclick={() => connectHost(host)}
+              on:contextmenu={(e) => handleContextMenu(e, host)}
+              title="Double-click to connect, right-click for options"
+            >
+              <div class="host-icon">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
                 </svg>
-              </button>
-            </div>
+              </div>
+              <div class="host-info">
+                <div class="host-name">{host.name || host.host}</div>
+                <div class="host-details">{host.username}@{host.host}</div>
+              </div>
+            </button>
           {/each}
         {/if}
       </div>
@@ -83,6 +128,55 @@
     </div>
   {/if}
 </aside>
+
+<!-- Context Menu -->
+{#if contextMenu && contextMenuHost}
+  <div
+    class="context-menu"
+    style="left: {contextMenu.x}px; top: {contextMenu.y}px;"
+    on:click|stopPropagation
+  >
+    <button
+      class="context-menu-item"
+      on:click={(e) => connectHost(contextMenuHost)}
+    >
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M7 1v12M1 7h12"/>
+      </svg>
+      Connect
+    </button>
+    <button
+      class="context-menu-item"
+      on:click={(e) => editHost(e, contextMenuHost)}
+    >
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M9.5 2L12 4.5L5 11.5L2 12L2.5 9L9.5 2Z"/>
+      </svg>
+      Edit
+    </button>
+    <button
+      class="context-menu-item"
+      on:click={(e) => duplicateHost(e, contextMenuHost)}
+    >
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="3" width="7" height="7" rx="1"/>
+        <path d="M5 1h6a2 2 0 012 2v6"/>
+      </svg>
+      Duplicate
+    </button>
+    <div class="context-menu-divider"></div>
+    <button
+      class="context-menu-item danger"
+      on:click={(e) => deleteHost(e, contextMenuHost)}
+    >
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M1 3h12M5 1h4M5 6v5M9 6v5"/>
+        <path d="M3 3h8v9a1 1 0 01-1 1H4a1 1 0 01-1-1V3z"/>
+      </svg>
+      Delete
+    </button>
+  </div>
+{/if}
 
 <style>
   .sidebar {
@@ -148,24 +242,18 @@
     @apply text-xs mt-2 text-gray-400 dark:text-gray-500;
   }
 
-  .host-card-wrapper {
-    @apply flex items-center gap-2;
-  }
-
-  .host-card-wrapper:hover .host-edit-btn {
-    opacity: 1;
-  }
-
   .host-card {
-    @apply flex-1 flex items-center gap-3 p-3 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700;
-    @apply hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-md transition-all cursor-pointer text-left;
+    @apply w-full flex items-center gap-3 p-3 rounded-lg bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700;
+    @apply hover:border-blue-400 dark:hover:border-blue-400 hover:shadow-md transition-all cursor-pointer text-left;
   }
 
-  .host-edit-btn {
-    @apply p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30;
-    @apply rounded-lg transition-all;
-    flex-shrink: 0;
-    opacity: 0;
+  .host-card.selected {
+    @apply border-blue-500 dark:border-blue-500 bg-blue-50 dark:bg-blue-950/20 shadow-lg;
+    @apply border-2;
+  }
+
+  .host-card.selected .host-icon {
+    @apply bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400;
   }
 
   .host-icon {
@@ -200,5 +288,25 @@
 
   .sidebar-content::-webkit-scrollbar-thumb:hover {
     @apply bg-gray-400 dark:bg-gray-500;
+  }
+
+  /* Context Menu */
+  .context-menu {
+    @apply fixed bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-[60];
+    @apply py-1 min-w-[180px];
+  }
+
+  .context-menu-item {
+    @apply w-full px-3 py-2 text-left text-sm flex items-center gap-2;
+    @apply text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700;
+    @apply transition-colors border-0 bg-transparent cursor-pointer;
+  }
+
+  .context-menu-item.danger {
+    @apply text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30;
+  }
+
+  .context-menu-divider {
+    @apply h-px bg-gray-200 dark:bg-gray-700 my-1;
   }
 </style>

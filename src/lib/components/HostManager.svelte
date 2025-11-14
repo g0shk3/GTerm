@@ -1,6 +1,7 @@
 <script>
   import { onMount, createEventDispatcher } from 'svelte';
   import { getHosts, addAndReloadHost, removeAndReloadHost } from '../stores/hosts';
+  import { getSnippets, addAndReloadSnippet, removeAndReloadSnippet } from '../stores/snippets';
   import { open } from '@tauri-apps/plugin-dialog';
   import { invoke } from '@tauri-apps/api/core';
 
@@ -9,9 +10,12 @@
   export let editingHost = null;
 
   let hosts = [];
+  let snippets = [];
   let selectedHost = null;
   let editMode = false;
+  let showSnippetManager = false;
   let keyTypeWarning = '';
+  let activeTab = 'hosts'; // 'hosts' or 'snippets'
 
   let form = {
     id: null,
@@ -21,16 +25,36 @@
     username: '',
     privateKeyPath: '',
     passphrase: '',
+    snippetId: null,
+  };
+
+  let snippetForm = {
+    id: null,
+    name: '',
+    content: '',
   };
 
   onMount(async () => {
     hosts = await getHosts();
+    snippets = await getSnippets();
 
     // Ако има редактиран профил, попълни формата
     if (editingHost) {
       form = { ...editingHost };
       editMode = true;
     }
+
+    // Handle Escape key to close modal
+    const handleKeydown = (e) => {
+      if (e.key === 'Escape') {
+        handleClose();
+      }
+    };
+    document.addEventListener('keydown', handleKeydown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeydown);
+    };
   });
 
   async function handleSelectKeyFile() {
@@ -93,6 +117,15 @@
     };
 
     hosts = await addAndReloadHost(host);
+
+    // Ако е editMode (е редактиране), затвори modal
+    if (editMode) {
+      dispatch('close');
+    } else {
+      // Иначе, е нова връзка, отвори я
+      dispatch('connect', host);
+    }
+
     resetForm();
   }
 
@@ -125,10 +158,48 @@
       username: '',
       privateKeyPath: '',
       passphrase: '',
+      snippetId: null,
     };
     editMode = false;
     selectedHost = null;
     keyTypeWarning = '';
+  }
+
+  async function handleSaveSnippet() {
+    if (!snippetForm.name || !snippetForm.content) {
+      alert('Please fill in both snippet name and content');
+      return;
+    }
+
+    const snippet = {
+      ...snippetForm,
+      id: snippetForm.id || `snippet-${Date.now()}`,
+    };
+
+    snippets = await addAndReloadSnippet(snippet);
+    resetSnippetForm();
+  }
+
+  async function handleDeleteSnippet(id) {
+    if (confirm('Are you sure you want to delete this snippet?')) {
+      snippets = await removeAndReloadSnippet(id);
+      // If the deleted snippet was selected in the form, clear the selection
+      if (form.snippetId === id) {
+        form.snippetId = null;
+      }
+    }
+  }
+
+  function handleEditSnippet(snippet) {
+    snippetForm = { ...snippet };
+  }
+
+  function resetSnippetForm() {
+    snippetForm = {
+      id: null,
+      name: '',
+      content: '',
+    };
   }
 
   function handleClose() {
@@ -136,14 +207,31 @@
   }
 </script>
 
-<div class="modal-overlay" on:click={handleClose} on:keydown={(e) => e.key === 'Escape' && handleClose()} role="dialog" tabindex="-1">
-  <div class="modal-content" on:click|stopPropagation on:keydown|stopPropagation role="document">
+<div class="modal-overlay" on:click={handleClose} role="presentation">
+  <div class="modal-content" on:click|stopPropagation role="dialog" tabindex="-1">
     <div class="modal-header">
-      <h2 class="text-xl font-bold">SSH Connections</h2>
+      <div class="header-tabs">
+        <button
+          class="header-tab"
+          class:active={activeTab === 'hosts'}
+          on:click={() => activeTab = 'hosts'}
+        >
+          SSH Connections
+        </button>
+        <button
+          class="header-tab"
+          class:active={activeTab === 'snippets'}
+          on:click={() => activeTab = 'snippets'}
+        >
+          Snippets
+        </button>
+      </div>
       <button class="close-btn" on:click={handleClose}>×</button>
     </div>
 
     <div class="modal-body">
+      <!-- HOSTS TAB -->
+      {#if activeTab === 'hosts'}
       <!-- Add/Edit Form -->
       <div class="form-section">
         <h3 class="text-lg font-semibold mb-3">
@@ -231,18 +319,112 @@
             />
           </div>
 
+          <div class="form-group">
+            <label for="snippet">Snippet</label>
+            <select id="snippet" bind:value={form.snippetId}>
+              <option value={null}>None</option>
+              {#each snippets as snippet (snippet.id)}
+                <option value={snippet.id}>{snippet.name}</option>
+              {/each}
+            </select>
+          </div>
+
           <div class="form-actions">
             <button type="submit" class="btn-primary">
               {editMode ? 'Update' : 'Save'}
             </button>
             {#if editMode}
-              <button type="button" class="btn-secondary" on:click={resetForm}>
+              <button type="button" class="btn-secondary" on:click={handleClose}>
                 Cancel
               </button>
             {/if}
           </div>
         </form>
       </div>
+      {/if}
+
+      <!-- SNIPPETS TAB -->
+      {#if activeTab === 'snippets'}
+      <div class="form-section">
+        <h3 class="text-lg font-semibold mb-3">
+          {snippetForm.id ? 'Edit Snippet' : 'Create New Snippet'}
+        </h3>
+
+        <form on:submit|preventDefault={handleSaveSnippet}>
+          <div class="form-group">
+            <label for="snippet-name">Name *</label>
+            <input
+              id="snippet-name"
+              type="text"
+              bind:value={snippetForm.name}
+              placeholder="e.g., ansible, docker, dev-env"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="snippet-content">Command/Script *</label>
+            <textarea
+              id="snippet-content"
+              bind:value={snippetForm.content}
+              placeholder="e.g., sudo su ansible&#10;or any command you want to auto-run"
+              rows="6"
+              required
+              autocapitalize="off"
+              spellcheck="false"
+            />
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">
+              {snippetForm.id ? 'Update' : 'Create'}
+            </button>
+            {#if snippetForm.id}
+              <button type="button" class="btn-secondary" on:click={resetSnippetForm}>
+                Cancel
+              </button>
+            {/if}
+          </div>
+        </form>
+
+        <!-- Snippets List -->
+        <div class="snippets-list-section">
+          <h3 class="text-lg font-semibold mb-3 mt-6">Your Snippets</h3>
+          {#if snippets.length === 0}
+            <p class="text-gray-500 dark:text-gray-400 text-sm">No snippets created yet</p>
+          {:else}
+            <div class="snippets-list">
+              {#each snippets as snippet (snippet.id)}
+                <div class="snippet-item">
+                  <div class="snippet-info">
+                    <div class="snippet-name">{snippet.name}</div>
+                    <div class="snippet-preview">{snippet.content}</div>
+                  </div>
+                  <div class="snippet-actions">
+                    <button
+                      type="button"
+                      class="snippet-btn snippet-edit-btn"
+                      on:click={() => handleEditSnippet(snippet)}
+                      title="Edit"
+                    >
+                      ✎
+                    </button>
+                    <button
+                      type="button"
+                      class="snippet-btn snippet-delete-btn"
+                      on:click={() => handleDeleteSnippet(snippet.id)}
+                      title="Delete"
+                    >
+                      🗑
+                    </button>
+                  </div>
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </div>
+      </div>
+      {/if}
     </div>
   </div>
 </div>
@@ -258,11 +440,7 @@
   }
 
   .modal-header {
-    @apply flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700;
-  }
-
-  .modal-header h2 {
-    @apply text-lg font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent;
+    @apply flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 gap-4;
   }
 
   .close-btn {
@@ -289,7 +467,7 @@
     @apply block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300;
   }
 
-  input {
+  input, select {
     @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100;
   }
 
@@ -305,15 +483,79 @@
     @apply px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-gray-100 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors font-medium;
   }
 
-  .btn-danger {
-    @apply px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium;
-  }
-
   .btn-sm {
     @apply px-2 py-1 text-sm rounded-md transition-colors font-medium;
   }
 
   .warning-message {
     @apply mt-2 text-sm text-orange-600 dark:text-orange-400;
+  }
+
+  /* Header Tabs */
+  .header-tabs {
+    @apply flex gap-4;
+  }
+
+  .header-tab {
+    @apply px-3 py-2 font-medium text-gray-700 dark:text-gray-300;
+    @apply border-b-2 border-transparent;
+    @apply hover:text-gray-900 dark:hover:text-white;
+    @apply transition-colors cursor-pointer;
+  }
+
+  .header-tab.active {
+    @apply text-blue-600 dark:text-blue-400;
+    @apply border-blue-600 dark:border-blue-400;
+  }
+
+
+  /* Textarea */
+  textarea {
+    @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-mono text-sm;
+  }
+
+  /* Snippets List Section */
+  .snippets-list-section {
+    @apply mt-6;
+  }
+
+  .snippets-list {
+    @apply space-y-3;
+  }
+
+  .snippet-item {
+    @apply flex items-start justify-between gap-4 p-3 rounded-lg border border-gray-200 dark:border-gray-700;
+    @apply bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors;
+  }
+
+  .snippet-info {
+    @apply flex-1 min-w-0;
+  }
+
+  .snippet-name {
+    @apply text-sm font-semibold text-gray-900 dark:text-white truncate;
+  }
+
+  .snippet-preview {
+    @apply text-xs text-gray-600 dark:text-gray-400 mt-1 truncate;
+  }
+
+  .snippet-actions {
+    @apply flex gap-2 flex-shrink-0;
+  }
+
+  .snippet-btn {
+    @apply w-8 h-8 flex items-center justify-center rounded-md transition-colors;
+    @apply text-base leading-none;
+  }
+
+  .snippet-edit-btn {
+    @apply bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300;
+    @apply hover:bg-blue-200 dark:hover:bg-blue-800;
+  }
+
+  .snippet-delete-btn {
+    @apply bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300;
+    @apply hover:bg-red-200 dark:hover:bg-red-800;
   }
 </style>

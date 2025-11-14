@@ -1,18 +1,26 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
+  import { getCurrentWindow } from '@tauri-apps/api/window';
   import { theme } from './lib/stores/theme';
-  import { tabs, activeTabId, createTab, closeTab } from './lib/stores/tabs';
+  import { tabs, activeTabId, createTab, closeTab, splitPane, renameTab, duplicateTab } from './lib/stores/tabs';
   import { hostsStore, loadHosts } from './lib/stores/hosts';
+  import { loadSnippets } from './lib/stores/snippets';
   import HostManager from './lib/components/HostManager.svelte';
+  import HostSelector from './lib/components/HostSelector.svelte';
   import Terminal from './lib/components/Terminal.svelte';
   import SFTP from './lib/components/SFTP.svelte';
+  import SplitPane from './lib/components/SplitPane.svelte';
   import Sidebar from './lib/components/Sidebar.svelte';
 
   let showHostManager = false;
+  let showHostSelector = false;
   let currentView = 'welcome'; // 'welcome', 'tabs'
   let sidebarOpen = true;
   let editingHost = null;
-  let keyboardShortcutsRegistered = false;
+  let tabContextMenu = null;
+  let contextMenuTab = null;
+  let editingTabId = null;
+  let renameInput = '';
 
   onMount(async () => {
     // Initialize theme
@@ -20,21 +28,29 @@
       document.documentElement.classList.add('dark');
     }
 
-    // Load saved hosts
+    // Load saved hosts and snippets
     await loadHosts();
+    await loadSnippets();
 
-    // Register keyboard shortcuts (only once)
-    if (!keyboardShortcutsRegistered) {
-      document.addEventListener('keydown', keyboardHandler);
-      keyboardShortcutsRegistered = true;
-    }
+    // Close context menu when clicking anywhere
+    const handleClick = () => {
+      tabContextMenu = null;
+      contextMenuTab = null;
+    };
+    document.addEventListener('click', handleClick);
+
+    // Register keyboard shortcuts - премахни стари, ако има
+    document.removeEventListener('keydown', keyboardHandler);
+    document.addEventListener('keydown', keyboardHandler);
 
     return () => {
-      if (keyboardShortcutsRegistered) {
-        document.removeEventListener('keydown', keyboardHandler);
-        keyboardShortcutsRegistered = false;
-      }
+      document.removeEventListener('click', handleClick);
     };
+  });
+
+  onDestroy(() => {
+    // Cleanup keyboard shortcuts
+    document.removeEventListener('keydown', keyboardHandler);
   });
 
   function toggleTheme() {
@@ -60,6 +76,20 @@
     showHostManager = true;
   }
 
+  function handleHostSelectorSelect(event) {
+    const host = event.detail;
+    createTab(host);
+    showHostSelector = false;
+    currentView = 'tabs';
+  }
+
+  function handleHostSelectorEdit(event) {
+    const host = event.detail;
+    editingHost = host;
+    showHostSelector = false;
+    showHostManager = true;
+  }
+
   function handleCloseTab(tabId) {
     closeTab(tabId);
     if ($tabs.length === 0) {
@@ -69,6 +99,59 @@
 
   function switchTab(tabId) {
     activeTabId.set(tabId);
+  }
+
+  function handleTabContextMenu(event, tab) {
+    event.preventDefault();
+    event.stopPropagation();
+    tabContextMenu = { x: event.clientX, y: event.clientY };
+    contextMenuTab = tab;
+  }
+
+  function handleRenameTab() {
+    if (!contextMenuTab) return;
+    editingTabId = contextMenuTab.id;
+    renameInput = contextMenuTab.title;
+    tabContextMenu = null;
+    // Focus the input after it renders
+    setTimeout(() => {
+      const input = document.querySelector('.tab-rename-input');
+      if (input) {
+        input.focus();
+        input.select();
+      }
+    }, 0);
+  }
+
+  function confirmRename() {
+    if (!editingTabId || !renameInput.trim()) {
+      cancelRename();
+      return;
+    }
+    renameTab(editingTabId, renameInput.trim());
+    editingTabId = null;
+    renameInput = '';
+  }
+
+  function cancelRename() {
+    editingTabId = null;
+    renameInput = '';
+  }
+
+  function handleRenameKeydown(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      confirmRename();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelRename();
+    }
+  }
+
+  function handleDuplicateTab() {
+    if (!contextMenuTab) return;
+    duplicateTab(contextMenuTab.id);
+    tabContextMenu = null;
   }
 
   const keyboardHandler = (e) => {
@@ -82,7 +165,15 @@
     // Cmd+Q - затвори приложението
     if (e.metaKey && e.key === 'q') {
       e.preventDefault();
-      window.close();
+      getCurrentWindow().close();
+      return;
+    }
+
+    // Cmd+K - изчисти терминала
+    if (e.metaKey && e.key === 'k') {
+      e.preventDefault();
+      // Dispatch global event за clear на терминала
+      window.dispatchEvent(new CustomEvent('clearTerminal'));
       return;
     }
 
@@ -92,6 +183,76 @@
       const currentTab = $tabs.find(t => t.id === $activeTabId);
       if (currentTab) {
         createTab(currentTab.host);
+      }
+      return;
+    }
+
+    // Cmd+Shift+E - вертикален split (ляво/дясно)
+    // Проверка ПРЕДИ Cmd+E, защото Shift прави key да е 'E' (главна буква)
+    if (e.metaKey && e.shiftKey && (e.key === 'E' || e.key === 'e')) {
+      e.preventDefault();
+      if ($activeTabId) {
+        splitPane($activeTabId, 'vertical');
+      }
+      return;
+    }
+
+    // Cmd+E - отвори host selector (быстър избор на профил)
+    if (e.metaKey && !e.shiftKey && (e.key === 'e' || e.key === 'E')) {
+      e.preventDefault();
+      showHostSelector = true;
+      return;
+    }
+
+    // Cmd+1 до Cmd+9 - превключи към таб 1-9
+    if (e.metaKey && e.key >= '1' && e.key <= '9') {
+      e.preventDefault();
+      const tabIndex = parseInt(e.key) - 1;
+      if (tabIndex < $tabs.length) {
+        switchTab($tabs[tabIndex].id);
+      }
+      return;
+    }
+
+    // Cmd+[ и Cmd+] - превключи към предишен/следващ таб
+    if (e.metaKey && (e.key === '[' || e.key === ']')) {
+      e.preventDefault();
+      const currentIndex = $tabs.findIndex(t => t.id === $activeTabId);
+      if (currentIndex !== -1) {
+        let newIndex;
+        if (e.key === '[') {
+          // Предишен таб (с wraparound)
+          newIndex = currentIndex > 0 ? currentIndex - 1 : $tabs.length - 1;
+        } else {
+          // Следващ таб (с wraparound)
+          newIndex = currentIndex < $tabs.length - 1 ? currentIndex + 1 : 0;
+        }
+        switchTab($tabs[newIndex].id);
+      }
+      return;
+    }
+
+    // Cmd+T - нов connection (отвори host manager за добавяне)
+    if (e.metaKey && e.key === 't') {
+      e.preventDefault();
+      showHostManager = true;
+      editingHost = null;
+      currentView = 'tabs'; // Switch to tabs view
+      return;
+    }
+
+    // Cmd+, - toggle sidebar
+    if (e.metaKey && e.key === ',') {
+      e.preventDefault();
+      sidebarOpen = !sidebarOpen;
+      return;
+    }
+
+    // Cmd+D - хоризонтален split (горе/долу)
+    if (e.metaKey && !e.shiftKey && e.key === 'd') {
+      e.preventDefault();
+      if ($activeTabId) {
+        splitPane($activeTabId, 'horizontal');
       }
       return;
     }
@@ -110,7 +271,9 @@
           <button
             class="modern-tab"
             class:active={tab.id === $activeTabId}
+            class:editing={editingTabId === tab.id}
             on:click={() => switchTab(tab.id)}
+            on:contextmenu={(e) => handleTabContextMenu(e, tab)}
           >
             <div class="tab-content-wrapper">
               <span
@@ -118,16 +281,29 @@
                 class:connected={tab.connected}
                 class:disconnected={!tab.connected}
               />
-              <span class="tab-label">{tab.title}</span>
-              <button
-                class="tab-close-btn"
-                on:click|stopPropagation={() => handleCloseTab(tab.id)}
-                title="Close"
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M3 3l8 8M11 3l-8 8" />
-                </svg>
-              </button>
+              {#if editingTabId === tab.id}
+                <input
+                  type="text"
+                  class="tab-rename-input"
+                  bind:value={renameInput}
+                  on:keydown={handleRenameKeydown}
+                  on:blur={confirmRename}
+                  on:click|stopPropagation
+                />
+              {:else}
+                <span class="tab-label">{tab.title}</span>
+              {/if}
+              {#if editingTabId !== tab.id}
+                <button
+                  class="tab-close-btn"
+                  on:click|stopPropagation={() => handleCloseTab(tab.id)}
+                  title="Close"
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 3l8 8M11 3l-8 8" />
+                  </svg>
+                </button>
+              {/if}
             </div>
           </button>
         {/each}
@@ -185,10 +361,16 @@
         <!-- Render all tabs but show only the active one -->
         {#each $tabs as tab (tab.id)}
           <div class="tab-content" class:hidden={tab.id !== $activeTabId}>
-            {#if tab.type === 'terminal'}
-              <Terminal {tab} />
-            {:else if tab.type === 'sftp'}
-              <SFTP {tab} />
+            {#if tab.splitLayout !== 'none'}
+              <!-- Render split panes -->
+              <SplitPane {tab} />
+            {:else}
+              <!-- Render single pane (legacy mode) -->
+              {#if tab.type === 'terminal'}
+                <Terminal {tab} />
+              {:else if tab.type === 'sftp'}
+                <SFTP {tab} />
+              {/if}
             {/if}
           </div>
         {/each}
@@ -211,6 +393,54 @@
       on:connect={handleNewConnection}
       on:close={() => { showHostManager = false; editingHost = null; }}
     />
+  {/if}
+
+  <!-- Host Selector Menu (Cmd+E) -->
+  {#if showHostSelector}
+    <HostSelector
+      on:select={handleHostSelectorSelect}
+      on:edit={handleHostSelectorEdit}
+      on:close={() => { showHostSelector = false; }}
+    />
+  {/if}
+
+  <!-- Tab Context Menu -->
+  {#if tabContextMenu && contextMenuTab}
+    <div
+      class="context-menu"
+      style="left: {tabContextMenu.x}px; top: {tabContextMenu.y}px;"
+      on:click|stopPropagation
+    >
+      <button
+        class="context-menu-item"
+        on:click={handleRenameTab}
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M9.5 2L12 4.5L5 11.5L2 12L2.5 9L9.5 2Z"/>
+        </svg>
+        Rename
+      </button>
+      <button
+        class="context-menu-item"
+        on:click={handleDuplicateTab}
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="3" width="7" height="7" rx="1"/>
+          <path d="M5 1h6a2 2 0 012 2v6"/>
+        </svg>
+        Duplicate
+      </button>
+      <div class="context-menu-divider"></div>
+      <button
+        class="context-menu-item danger"
+        on:click={() => { handleCloseTab(contextMenuTab.id); tabContextMenu = null; }}
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 3l8 8M11 3l-8 8" />
+        </svg>
+        Close
+      </button>
+    </div>
   {/if}
 </div>
 
@@ -246,11 +476,6 @@
     @apply transition-all duration-200;
     font-size: 14px;
     font-weight: 500;
-  }
-
-  .new-connection-btn {
-    @apply bg-blue-600 text-white;
-    @apply hover:bg-blue-700 dark:hover:bg-blue-600;
   }
 
   /* Modern Tabs */
@@ -305,6 +530,20 @@
 
   .modern-tab.active .tab-label {
     @apply text-gray-900 dark:text-white;
+  }
+
+  .tab-rename-input {
+    @apply px-2 py-0.5 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white;
+    @apply border border-blue-500 dark:border-blue-400 rounded;
+    @apply outline-none;
+    min-width: 80px;
+    max-width: 200px;
+  }
+
+  .modern-tab.editing {
+    @apply bg-white dark:bg-gray-800;
+    @apply border-gray-200 dark:border-gray-700;
+    @apply shadow-sm;
   }
 
   .tab-close-btn {
@@ -378,5 +617,25 @@
     @apply rounded-xl font-medium;
     @apply transition-all duration-200;
     @apply shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40;
+  }
+
+  /* Context Menu */
+  .context-menu {
+    @apply fixed bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-[60];
+    @apply py-1 min-w-[160px];
+  }
+
+  .context-menu-item {
+    @apply w-full px-3 py-2 text-left text-sm flex items-center gap-2;
+    @apply text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700;
+    @apply transition-colors border-0 bg-transparent cursor-pointer;
+  }
+
+  .context-menu-item.danger {
+    @apply text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30;
+  }
+
+  .context-menu-divider {
+    @apply h-px bg-gray-200 dark:bg-gray-700 my-1;
   }
 </style>

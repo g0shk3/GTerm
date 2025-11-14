@@ -6,7 +6,8 @@
   import { FitAddon } from '@xterm/addon-fit';
   import { WebLinksAddon } from '@xterm/addon-web-links';
   import '@xterm/xterm/css/xterm.css';
-  import { updateTabConnection } from '../stores/tabs';
+  import { updateTabConnection, activeTabId } from '../stores/tabs';
+  import { getSnippets } from '../stores/snippets';
 
   export let tab;
 
@@ -102,6 +103,9 @@
     // Window resize handler
     window.addEventListener('resize', handleResize);
 
+    // Clear terminal handler
+    window.addEventListener('clearTerminal', handleClearTerminal);
+
     // Connect to SSH
     await connectSSH();
   });
@@ -126,12 +130,39 @@
       // Fit terminal after connection
       setTimeout(() => {
         fitAddon.fit();
+        // Focus terminal so user can start typing immediately
+        terminal.focus();
       }, 100);
+
+      // Execute snippet if assigned
+      if (tab.host.snippetId) {
+        await executeSnippet(tab.host.snippetId);
+      }
     } catch (error) {
       connecting = false;
       errorMessage = `Failed to connect: ${error}`;
       terminal.write(`\r\n\x1b[31m${errorMessage}\x1b[0m\r\n`);
       updateTabConnection(tab.id, false);
+    }
+  }
+
+  async function executeSnippet(snippetId) {
+    try {
+      const snippets = await getSnippets();
+      const snippet = snippets.find(s => s.id === snippetId);
+
+      if (snippet && snippet.content) {
+        // Add a small delay to ensure terminal is ready
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Send the snippet command with Enter
+        await invoke('ssh_send_input', {
+          sessionId: tab.sessionId,
+          data: snippet.content + '\n',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to execute snippet:', error);
     }
   }
 
@@ -141,8 +172,15 @@
     }
   }
 
+  function handleClearTerminal() {
+    if (terminal) {
+      terminal.clear();
+    }
+  }
+
   onDestroy(async () => {
     window.removeEventListener('resize', handleResize);
+    window.removeEventListener('clearTerminal', handleClearTerminal);
 
     if (unlistenOutput) await unlistenOutput();
     if (unlistenClosed) await unlistenClosed();
@@ -158,6 +196,11 @@
       terminal.dispose();
     }
   });
+
+  // Focus terminal when this tab becomes active
+  $: if (terminal && $activeTabId === tab.id) {
+    terminal.focus();
+  }
 </script>
 
 <div class="terminal-wrapper">
