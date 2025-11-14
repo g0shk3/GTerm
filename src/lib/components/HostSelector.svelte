@@ -1,6 +1,7 @@
 <script>
   import { createEventDispatcher, onMount } from 'svelte';
-  import { hostsStore, removeAndReloadHost, addAndReloadHost } from '../stores/hosts';
+  import { hostsStore, removeAndReloadHost, addAndReloadHost, updateHosts } from '../stores/hosts';
+  import { dndzone } from 'svelte-dnd-action';
 
   const dispatch = createEventDispatcher();
 
@@ -10,6 +11,23 @@
   let searchInput;
   let contextMenu = null;
   let contextMenuHost = null;
+
+  const dndConfig = {
+    items: filteredHosts,
+    flipDurationMs: 200,
+    dragDisabled: searchQuery.trim() !== ''
+  };
+
+  function handleDndConsider(e) {
+    filteredHosts = e.detail.items;
+  }
+
+  function handleDndFinalize(e) {
+    filteredHosts = e.detail.items;
+    if (searchQuery.trim() === '') {
+      updateHosts(filteredHosts);
+    }
+  }
 
   $: {
     if (searchQuery.trim() === '') {
@@ -22,6 +40,8 @@
         host.username.toLowerCase().includes(query)
       );
     }
+    dndConfig.items = filteredHosts;
+    dndConfig.dragDisabled = searchQuery.trim() !== '';
     selectedIndex = -1;
   }
 
@@ -134,7 +154,12 @@
     </div>
 
     <!-- Hosts List -->
-    <div class="hosts-list">
+    <div
+      class="hosts-list"
+      use:dndzone={dndConfig}
+      on:consider={handleDndConsider}
+      on:finalize={handleDndFinalize}
+    >
       {#if filteredHosts.length === 0}
         <div class="empty-state">
           {#if searchQuery}
@@ -151,6 +176,7 @@
             on:mouseenter={() => selectedIndex = index}
             on:contextmenu={(e) => handleContextMenu(e, host)}
           >
+
             <button
               class="host-item"
               on:click={() => handleSelect(host)}
@@ -299,16 +325,12 @@
 
   /* Host Items */
   .host-item-wrapper {
-    @apply flex items-center gap-2 px-4 py-2 transition-colors border-l-2 border-transparent;
+    @apply flex items-center py-2 transition-colors border-l-2 border-transparent;
     @apply hover:bg-gray-100 dark:hover:bg-gray-700;
   }
 
-  .host-item-wrapper.selected {
-    @apply bg-blue-50 dark:bg-blue-900/30 border-l-blue-500;
-  }
-
   .host-item {
-    @apply flex items-center gap-3 flex-1 text-left bg-transparent border-0 p-0;
+    @apply flex items-center gap-3 flex-1 text-left bg-transparent border-0 pl-4 pr-3 py-0;
     @apply text-gray-700 dark:text-gray-300 cursor-pointer;
   }
 
@@ -405,5 +427,15 @@
 
   .context-menu-divider {
     @apply h-px bg-gray-200 dark:bg-gray-700 my-1;
+  }
+
+  .drag-handle {
+    @apply cursor-grab text-gray-400 dark:text-gray-500 pr-2;
+  }
+
+  :global([dnd-zone]) {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
   }
 </style>

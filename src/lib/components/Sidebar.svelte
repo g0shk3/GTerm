@@ -1,6 +1,7 @@
 <script>
   import { createEventDispatcher, onMount } from 'svelte';
-  import { hostsStore, removeAndReloadHost, addAndReloadHost } from '../stores/hosts';
+  import { hostsStore, removeAndReloadHost, addAndReloadHost, updateHosts } from '../stores/hosts';
+  import { dndzone } from 'svelte-dnd-action';
 
   export let isOpen = true;
 
@@ -9,6 +10,23 @@
   let selectedHostId = null;
   let contextMenu = null;
   let contextMenuHost = null;
+  let hosts = [];
+
+  $: hosts = $hostsStore;
+
+  const dndConfig = {
+    items: hosts,
+    flipDurationMs: 200
+  };
+
+  function handleDndConsider(e) {
+    hosts = e.detail.items;
+  }
+
+  function handleDndFinalize(e) {
+    hosts = e.detail.items;
+    updateHosts(hosts);
+  }
 
   onMount(() => {
     // Close context menu when clicking anywhere
@@ -89,14 +107,19 @@
 
   {#if isOpen}
     <div class="sidebar-content">
-      <div class="hosts-list">
-        {#if $hostsStore.length === 0}
+      <div
+        class="hosts-list"
+        use:dndzone={{ items: hosts, flipDurationMs: 200 }}
+        on:consider={handleDndConsider}
+        on:finalize={handleDndFinalize}
+      >
+        {#if hosts.length === 0}
           <div class="empty-state">
             <p>No saved connections</p>
             <p class="hint">Click "Manage Connections" to add</p>
           </div>
         {:else}
-          {#each $hostsStore as host (host.id)}
+          {#each hosts as host (host.id)}
             <button
               class="host-card"
               class:selected={selectedHostId === host.id}
@@ -105,6 +128,7 @@
               on:contextmenu={(e) => handleContextMenu(e, host)}
               title="Double-click to connect, right-click for options"
             >
+
               <div class="host-icon">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                   <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
@@ -243,7 +267,7 @@
   }
 
   .host-card {
-    @apply w-full flex items-center gap-3 p-3 rounded-lg bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700;
+    @apply w-full flex items-center pl-3 pr-3 py-3 rounded-lg bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700;
     @apply hover:border-blue-400 dark:hover:border-blue-400 hover:shadow-md transition-all cursor-pointer text-left;
   }
 
@@ -308,5 +332,15 @@
 
   .context-menu-divider {
     @apply h-px bg-gray-200 dark:bg-gray-700 my-1;
+  }
+
+  .drag-handle {
+    @apply cursor-grab text-gray-400 dark:text-gray-500 pr-2;
+  }
+
+  :global([dnd-zone]) {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
   }
 </style>

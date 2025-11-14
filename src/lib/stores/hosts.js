@@ -66,3 +66,11 @@ export async function updateAndReloadHost(host) {
   hostsStore.set(hosts);
   return hosts;
 }
+
+export async function updateHosts(updatedHosts) {
+  const s = await initStore();
+  await s.set('hosts', updatedHosts);
+  await s.save();
+  hostsStore.set(updatedHosts);
+  return updatedHosts;
+}
