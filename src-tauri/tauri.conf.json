@@ -24,6 +24,17 @@
       "exceptionDomain": null
     }
   },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDU0OTgxNTEyMDNCNzZDNzIKUldSeWJMY0RFaFdZVkhlb2lwRVVKRDE1T1ZJLzMyUFFjUE9Ua2RLeVllcmlaQVhXQnhUYUlVV0wK",
+      "endpoints": [
+        "https://github.com/g0shk3/GTerm/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  },
   "app": {
     "windows": [
       {

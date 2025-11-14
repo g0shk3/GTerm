@@ -1,6 +1,9 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
   import { getCurrentWindow } from '@tauri-apps/api/window';
+  import { check } from '@tauri-apps/plugin-updater';
+  import { ask } from '@tauri-apps/plugin-dialog';
+  import { relaunch } from '@tauri-apps/plugin-process';
   import { theme } from './lib/stores/theme';
   import { tabs, activeTabId, createTab, closeTab, splitPane, renameTab, duplicateTab } from './lib/stores/tabs';
   import { hostsStore, loadHosts } from './lib/stores/hosts';
@@ -31,6 +34,29 @@
     // Load saved hosts and snippets
     await loadHosts();
     await loadSnippets();
+
+    // Check for updates (silent check)
+    try {
+      const update = await check();
+      if (update?.available) {
+        const yes = await ask(
+          `Update to ${update.version} is available!\n\nRelease notes: ${update.body}`,
+          {
+            title: 'Update Available',
+            kind: 'info',
+            okLabel: 'Update Now',
+            cancelLabel: 'Later'
+          }
+        );
+
+        if (yes) {
+          await update.downloadAndInstall();
+          await relaunch();
+        }
+      }
+    } catch (error) {
+      console.error('Update check failed:', error);
+    }
 
     // Close context menu when clicking anywhere
     const handleClick = () => {
