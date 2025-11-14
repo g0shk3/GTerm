@@ -38,7 +38,9 @@
         "decorations": true,
         "transparent": false,
         "skipTaskbar": false,
-        "center": true
+        "center": true,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true
       }
     ],
     "security": {

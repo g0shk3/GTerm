@@ -263,8 +263,8 @@
 
 <div class="app-container">
   <!-- Modern Header -->
-  <header class="modern-header">
-    <div class="header-center">
+  <header class="modern-header" data-tauri-drag-region>
+    <div class="header-center" data-tauri-drag-region>
       <!-- Modern Tabs -->
       <div class="modern-tabs">
         {#each $tabs as tab (tab.id)}
@@ -447,16 +447,19 @@
 <style>
   .app-container {
     @apply flex flex-col w-full h-screen overflow-hidden;
-    @apply bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800;
+    background-color: #1f2937; /* Same as terminal - gray-800 */
   }
 
   /* Modern Header */
   .modern-header {
-    @apply flex items-center justify-between px-6 py-3;
-    @apply bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg;
-    @apply border-b border-gray-200/50 dark:border-gray-700/50;
+    @apply flex items-center justify-between;
+    @apply bg-transparent;
     flex-shrink: 0;
     z-index: 10;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    padding-left: 80px; /* Space for macOS traffic lights */
+    padding-right: 24px;
   }
 
   .header-right {

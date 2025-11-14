@@ -27,7 +27,7 @@
       fontSize: 14,
       fontFamily: '"SF Mono", Monaco, Menlo, "Courier New", monospace',
       theme: {
-        background: '#1a1a1a',
+        background: '#1f2937', // gray-800 - same as sidebar and welcome screen
         foreground: '#ffffff',
         cursor: '#d0d0d0',
         selection: 'rgba(255, 255, 255, 0.3)',
@@ -232,7 +232,8 @@
 
   .connecting-overlay,
   .error-overlay {
-    @apply absolute inset-0 flex flex-col items-center justify-center bg-gray-900 bg-opacity-90 z-10;
+    @apply absolute inset-0 flex flex-col items-center justify-center z-10;
+    background-color: rgba(31, 41, 55, 0.95); /* gray-800 with opacity */
   }
 
   .connecting-spinner {
