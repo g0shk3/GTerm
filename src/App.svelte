@@ -38,7 +38,7 @@
     // Check for updates (silent check)
     try {
       const update = await check();
-      if (update?.available) {
+      if (update) {
         const yes = await ask(
           `Update to ${update.version} is available!\n\nRelease notes: ${update.body}`,
           {
@@ -50,8 +50,17 @@
         );
 
         if (yes) {
-          await update.downloadAndInstall();
-          await relaunch();
+          try {
+            await update.downloadAndInstall();
+            await relaunch();
+          } catch (err) {
+            console.error('Update installation failed:', err);
+            await ask('Update installation failed. Please download the latest version manually.', {
+              title: 'Update Error',
+              kind: 'error',
+              okLabel: 'OK'
+            });
+          }
         }
       }
     } catch (error) {

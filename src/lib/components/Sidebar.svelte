@@ -2,10 +2,13 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import { hostsStore, removeAndReloadHost, addAndReloadHost, updateHosts } from '../stores/hosts';
   import { dndzone } from 'svelte-dnd-action';
+  import { getVersion } from '@tauri-apps/api/app';
 
   export let isOpen = true;
 
   const dispatch = createEventDispatcher();
+
+  let appVersion = '1.0.1';
 
   let selectedHostId = null;
   let contextMenu = null;
@@ -28,7 +31,14 @@
     updateHosts(hosts);
   }
 
-  onMount(() => {
+  onMount(async () => {
+    // Get app version
+    try {
+      appVersion = await getVersion();
+    } catch (err) {
+      console.error('Failed to get app version:', err);
+    }
+
     // Close context menu when clicking anywhere
     const handleClick = () => {
       contextMenu = null;
@@ -178,6 +188,10 @@
       >
         + Manage Connections
       </button>
+
+      <div class="version-info">
+        GTerm v{appVersion}
+      </div>
     </div>
   {/if}
 </aside>
@@ -281,6 +295,11 @@
     white-space: nowrap;
     flex-shrink: 0;
     margin-top: auto;
+  }
+
+  .version-info {
+    @apply text-center text-xs text-gray-400 dark:text-gray-500 py-2;
+    flex-shrink: 0;
   }
 
   .empty-state {
