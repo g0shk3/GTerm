@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export PATH="/opt/homebrew/bin:$PATH"
+
 # GTerm Auto-Update Release Script
 # Usage: ./scripts/release.sh <version>
 # Example: ./scripts/release.sh 1.0.4
@@ -97,7 +99,8 @@ print_step "Step 4/7: Creating update package..."
 cd src-tauri/target/release/bundle/macos
 
 if [ ! -f "GTerm.app.tar.gz" ]; then
-    tar -czf GTerm.app.tar.gz GTerm.app
+    # Use COPYFILE_DISABLE=1 to prevent macOS metadata files (._*) from being included
+    COPYFILE_DISABLE=1 tar -czf GTerm.app.tar.gz GTerm.app
     print_success "Created GTerm.app.tar.gz"
 else
     print_warning "GTerm.app.tar.gz already exists, skipping..."
@@ -111,8 +114,13 @@ print_step "Step 5/7: Signing the package..."
 cd src-tauri/target/release/bundle/macos
 
 if [ ! -f "GTerm.app.tar.gz.sig" ]; then
-    # Use empty password (press Enter twice)
-    printf '\n' | tauri signer sign GTerm.app.tar.gz --private-key-path ~/.tauri/gterm.key
+    # Sign with password Admin123! using expect for automation
+    expect << 'EOF'
+spawn tauri signer sign GTerm.app.tar.gz --private-key-path /Users/g0shk3/.tauri/gterm.key
+expect "Password:"
+send "Admin123!\r"
+expect eof
+EOF
     print_success "Package signed successfully"
 else
     print_warning "GTerm.app.tar.gz.sig already exists, using existing signature"
