@@ -278,7 +278,7 @@
   <header class="modern-header" data-tauri-drag-region>
     <div class="header-center" data-tauri-drag-region>
       <!-- Modern Tabs -->
-      <div class="modern-tabs">
+      <div class="modern-tabs" data-tauri-drag-region>
         {#each $tabs as tab (tab.id)}
           <button
             class="modern-tab"
