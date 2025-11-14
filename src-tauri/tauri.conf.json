@@ -53,7 +53,7 @@
         "center": true,
         "titleBarStyle": "Overlay",
         "hiddenTitle": true,
-        "devtools": true
+        "devtools": false
       }
     ],
     "security": {
