@@ -267,7 +267,7 @@
   }
 
   .host-card {
-    @apply w-full flex items-center pl-3 pr-3 py-3 rounded-lg bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700;
+    @apply w-full flex items-center gap-4 pl-3 pr-3 py-3 rounded-lg bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700;
     @apply hover:border-blue-400 dark:hover:border-blue-400 hover:shadow-md transition-all cursor-pointer text-left;
   }
 

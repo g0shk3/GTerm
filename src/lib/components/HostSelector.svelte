@@ -330,7 +330,7 @@
   }
 
   .host-item {
-    @apply flex items-center gap-3 flex-1 text-left bg-transparent border-0 pl-4 pr-3 py-0;
+    @apply flex items-center gap-4 flex-1 text-left bg-transparent border-0 pl-4 pr-3 py-0;
     @apply text-gray-700 dark:text-gray-300 cursor-pointer;
   }
 
