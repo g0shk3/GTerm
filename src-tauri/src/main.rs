@@ -2,12 +2,14 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod ssh;
+mod local;
 
 use ssh::{
     connection::SshConnection,
     keygen::{generate_ed25519_keypair, get_key_type},
     sftp::{list_directory, download_file, upload_file},
 };
+use local::connection::LocalConnection;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tauri::State;
@@ -15,6 +17,7 @@ use tokio::sync::Mutex;
 
 pub struct AppState {
     connections: Arc<Mutex<HashMap<String, SshConnection>>>,
+    local_connections: Arc<Mutex<HashMap<String, LocalConnection>>>,
 }
 
 #[tauri::command]
@@ -150,6 +153,73 @@ async fn sftp_upload(
     }
 }
 
+// Local terminal commands
+#[tauri::command]
+async fn local_connect(
+    session_id: String,
+    shell: Option<String>,
+    cwd: Option<String>,
+    app_handle: tauri::AppHandle,
+    state: State<'_, AppState>,
+) -> Result<String, String> {
+    let mut connection = LocalConnection::new(session_id.clone());
+
+    connection
+        .spawn(shell, cwd, app_handle)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let mut connections = state.local_connections.lock().await;
+    connections.insert(session_id.clone(), connection);
+
+    Ok(session_id)
+}
+
+#[tauri::command]
+async fn local_send_input(
+    session_id: String,
+    data: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let connections = state.local_connections.lock().await;
+
+    if let Some(connection) = connections.get(&session_id) {
+        connection.send_input(data).await.map_err(|e| e.to_string())
+    } else {
+        Err("Connection not found".to_string())
+    }
+}
+
+#[tauri::command]
+async fn local_disconnect(
+    session_id: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let mut connections = state.local_connections.lock().await;
+
+    if let Some(mut connection) = connections.remove(&session_id) {
+        connection.disconnect().await.map_err(|e| e.to_string())
+    } else {
+        Err("Connection not found".to_string())
+    }
+}
+
+#[tauri::command]
+async fn local_resize(
+    session_id: String,
+    cols: u32,
+    rows: u32,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let connections = state.local_connections.lock().await;
+
+    if let Some(connection) = connections.get(&session_id) {
+        connection.resize(cols, rows).await.map_err(|e| e.to_string())
+    } else {
+        Err("Connection not found".to_string())
+    }
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -157,6 +227,7 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .manage(AppState {
             connections: Arc::new(Mutex::new(HashMap::new())),
+            local_connections: Arc::new(Mutex::new(HashMap::new())),
         })
         .invoke_handler(tauri::generate_handler![
             ssh_connect,
@@ -169,6 +240,10 @@ fn main() {
             sftp_list_directory,
             sftp_download,
             sftp_upload,
+            local_connect,
+            local_send_input,
+            local_disconnect,
+            local_resize,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

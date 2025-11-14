@@ -61,7 +61,9 @@
     // Handle user input
     terminal.onData(async (data) => {
       try {
-        await invoke('ssh_send_input', {
+        const connectionType = tab.host?.type || 'ssh';
+        const command = connectionType === 'local' ? 'local_send_input' : 'ssh_send_input';
+        await invoke(command, {
           sessionId: tab.sessionId,
           data: data,
         });
@@ -73,7 +75,9 @@
     // Handle terminal resize
     terminal.onResize(async ({ cols, rows }) => {
       try {
-        await invoke('ssh_resize', {
+        const connectionType = tab.host?.type || 'ssh';
+        const command = connectionType === 'local' ? 'local_resize' : 'ssh_resize';
+        await invoke(command, {
           sessionId: tab.sessionId,
           cols,
           rows,
@@ -83,19 +87,23 @@
       }
     });
 
-    // Listen for SSH output
-    unlistenOutput = await listen(`ssh-output:${tab.sessionId}`, (event) => {
+    // Determine event channel prefix based on connection type
+    const connectionType = tab.host?.type || 'ssh';
+    const eventPrefix = connectionType === 'local' ? 'terminal' : 'ssh';
+
+    // Listen for terminal output
+    unlistenOutput = await listen(`${eventPrefix}-output:${tab.sessionId}`, (event) => {
       terminal.write(event.payload);
     });
 
-    // Listen for SSH closed
-    unlistenClosed = await listen(`ssh-closed:${tab.sessionId}`, () => {
+    // Listen for connection closed
+    unlistenClosed = await listen(`${eventPrefix}-closed:${tab.sessionId}`, () => {
       terminal.write('\r\n\x1b[31mConnection closed\x1b[0m\r\n');
       updateTabConnection(tab.id, false);
     });
 
-    // Listen for SSH errors
-    unlistenError = await listen(`ssh-error:${tab.sessionId}`, (event) => {
+    // Listen for errors
+    unlistenError = await listen(`${eventPrefix}-error:${tab.sessionId}`, (event) => {
       terminal.write(`\r\n\x1b[31mError: ${event.payload}\x1b[0m\r\n`);
       updateTabConnection(tab.id, false);
     });
@@ -106,8 +114,12 @@
     // Clear terminal handler
     window.addEventListener('clearTerminal', handleClearTerminal);
 
-    // Connect to SSH
-    await connectSSH();
+    // Connect based on type
+    if (connectionType === 'local') {
+      await connectLocal();
+    } else {
+      await connectSSH();
+    }
   });
 
   async function connectSSH() {
@@ -146,6 +158,39 @@
     }
   }
 
+  async function connectLocal() {
+    try {
+      connecting = true;
+      errorMessage = '';
+
+      await invoke('local_connect', {
+        sessionId: tab.sessionId,
+        shell: tab.host.shell || null,
+        cwd: tab.host.cwd || null,
+      });
+
+      connecting = false;
+      updateTabConnection(tab.id, true);
+
+      // Fit terminal after connection
+      setTimeout(() => {
+        fitAddon.fit();
+        // Focus terminal so user can start typing immediately
+        terminal.focus();
+      }, 100);
+
+      // Execute snippet if assigned
+      if (tab.host.snippetId) {
+        await executeSnippet(tab.host.snippetId);
+      }
+    } catch (error) {
+      connecting = false;
+      errorMessage = `Failed to start local terminal: ${error}`;
+      terminal.write(`\r\n\x1b[31m${errorMessage}\x1b[0m\r\n`);
+      updateTabConnection(tab.id, false);
+    }
+  }
+
   async function executeSnippet(snippetId) {
     try {
       const snippets = await getSnippets();
@@ -155,8 +200,11 @@
         // Add a small delay to ensure terminal is ready
         await new Promise(resolve => setTimeout(resolve, 500));
 
+        const connectionType = tab.host?.type || 'ssh';
+        const command = connectionType === 'local' ? 'local_send_input' : 'ssh_send_input';
+
         // Send the snippet command with Enter
-        await invoke('ssh_send_input', {
+        await invoke(command, {
           sessionId: tab.sessionId,
           data: snippet.content + '\n',
         });
@@ -187,7 +235,9 @@
     if (unlistenError) await unlistenError();
 
     try {
-      await invoke('ssh_disconnect', { sessionId: tab.sessionId });
+      const connectionType = tab.host?.type || 'ssh';
+      const command = connectionType === 'local' ? 'local_disconnect' : 'ssh_disconnect';
+      await invoke(command, { sessionId: tab.sessionId });
     } catch (error) {
       console.error('Failed to disconnect:', error);
     }
@@ -207,14 +257,20 @@
   {#if connecting}
     <div class="connecting-overlay">
       <div class="connecting-spinner"></div>
-      <div class="connecting-text">Connecting to {tab.host.host}...</div>
+      <div class="connecting-text">
+        {#if tab.host?.type === 'local'}
+          Starting local terminal...
+        {:else}
+          Connecting to {tab.host.host}...
+        {/if}
+      </div>
     </div>
   {/if}
 
   {#if errorMessage}
     <div class="error-overlay">
       <div class="error-text">{errorMessage}</div>
-      <button class="btn-retry" on:click={connectSSH}>Retry</button>
+      <button class="btn-retry" on:click={tab.host?.type === 'local' ? connectLocal : connectSSH}>Retry</button>
     </div>
   {/if}
 

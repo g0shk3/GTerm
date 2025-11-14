@@ -76,6 +76,18 @@
     showHostManager = true;
   }
 
+  function createLocalTerminal() {
+    const localHost = {
+      id: `local-${Date.now()}`,
+      name: 'Local Terminal',
+      type: 'local',
+      shell: null, // Will use default shell
+      cwd: null, // Will use HOME directory
+    };
+    createTab(localHost);
+    currentView = 'tabs';
+  }
+
   function handleHostSelectorSelect(event) {
     const host = event.detail;
     createTab(host);
@@ -349,12 +361,21 @@
             <p class="welcome-subtitle">
               Modern, secure SSH terminal for macOS
             </p>
-            <button on:click={() => showHostManager = true} class="welcome-btn">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M10 4v12M4 10h12" />
-              </svg>
-              Connect to Server
-            </button>
+            <div class="welcome-buttons">
+              <button on:click={createLocalTerminal} class="welcome-btn welcome-btn-primary">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="14" height="14" rx="2" />
+                  <path d="M6 8l3 3-3 3M10 14h4" />
+                </svg>
+                Local Terminal
+              </button>
+              <button on:click={() => showHostManager = true} class="welcome-btn">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10 4v12M4 10h12" />
+                </svg>
+                Connect to Server
+              </button>
+            </div>
           </div>
         </div>
       {:else if currentView === 'tabs'}
@@ -614,12 +635,22 @@
     @apply text-lg text-gray-600 dark:text-gray-400 mb-8;
   }
 
+  .welcome-buttons {
+    @apply flex flex-col gap-3 w-full max-w-sm;
+  }
+
   .welcome-btn {
-    @apply inline-flex items-center gap-2 px-6 py-3;
-    @apply bg-blue-600 hover:bg-blue-700 text-white;
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3;
+    @apply bg-gray-700 hover:bg-gray-600 text-white;
     @apply rounded-xl font-medium;
     @apply transition-all duration-200;
-    @apply shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40;
+    @apply shadow-lg hover:shadow-xl;
+    @apply w-full;
+  }
+
+  .welcome-btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700;
+    @apply shadow-blue-500/30 hover:shadow-blue-500/40;
   }
 
   /* Context Menu */
