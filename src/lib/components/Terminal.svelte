@@ -29,7 +29,7 @@
     terminal = new XTerm({
       cursorBlink: true,
       fontSize: 14,
-      fontFamily: '"SF Mono", Monaco, Menlo, "Courier New", monospace',
+      fontFamily: 'Menlo, Monaco, "Courier New", monospace',
       theme: {
         background: '#1f2937', // gray-800 - same as sidebar and welcome screen
         foreground: '#ffffff',
