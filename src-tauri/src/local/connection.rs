@@ -99,7 +99,7 @@ impl LocalConnection {
         let mut writer_clone = self.writer.lock().await.take().ok_or_else(|| anyhow!("Failed to take writer"))?;
         let mut reader_clone = self.reader.lock().await.take().ok_or_else(|| anyhow!("Failed to take reader"))?;
         let child_clone = self.child.clone();
-        let mut shutdown_rx_clone = shutdown_rx.clone();
+        let shutdown_rx_clone = shutdown_rx.clone();
 
         // Writer task
         tokio::spawn(async move {
