@@ -1,6 +1,6 @@
 {
   "productName": "GTerm",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "identifier": "com.gterm.terminal",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -52,7 +52,8 @@
         "skipTaskbar": false,
         "center": true,
         "titleBarStyle": "Overlay",
-        "hiddenTitle": true
+        "hiddenTitle": true,
+        "devtools": true
       }
     ],
     "security": {
