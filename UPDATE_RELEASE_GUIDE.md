@@ -57,7 +57,7 @@ git push
 
 ```bash
 export TAURI_SIGNING_PRIVATE_KEY=$(cat ~/.tauri/gterm-keys)
-export TAURI_SIGNING_PRIVATE_KEY_PASSWORD='Krisko17!@'
+export TAURI_SIGNING_PRIVATE_KEY_PASSWORD=********
 ```
 
 ⚠️ **Важно:** Използвай **single quotes** `'` за паролата!
@@ -101,7 +101,7 @@ tar -czf GTerm_1.0.1_aarch64.dmg.tar.gz GTerm_1.0.1_aarch64.dmg
 tauri signer sign GTerm_1.0.1_aarch64.dmg.tar.gz --private-key-path ~/.tauri/gterm-keys
 ```
 
-Ще те попита за парола → въведи: `Krisko17!@`
+Ще те попита за парола → въведи: ********
 
 Това създава: `GTerm_1.0.1_aarch64.dmg.tar.gz.sig`
 
@@ -239,7 +239,7 @@ Scroll надолу до **"Attach binaries..."** и качи:
 ```bash
 # Set signing vars
 export TAURI_SIGNING_PRIVATE_KEY=$(cat ~/.tauri/gterm-keys)
-export TAURI_SIGNING_PRIVATE_KEY_PASSWORD='Krisko17!@'
+export TAURI_SIGNING_PRIVATE_KEY_PASSWORD=*******
 
 # Build
 npm run tauri:build
