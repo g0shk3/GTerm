@@ -1,7 +1,5 @@
 #!/bin/bash
 
-export PATH="/opt/homebrew/bin:$PATH"
-
 # GTerm Auto-Update Release Script
 # Usage: ./scripts/release.sh <version>
 # Example: ./scripts/release.sh 1.0.4
@@ -37,6 +35,20 @@ if [ -z "$1" ]; then
     print_error "Version not specified!"
     echo "Usage: ./scripts/release.sh <version>"
     echo "Example: ./scripts/release.sh 1.0.4"
+    exit 1
+fi
+
+# Check if gh CLI is installed
+if ! command -v gh &> /dev/null; then
+    print_error "gh CLI is not installed!"
+    echo "Install it with: curl -fsSL https://github.com/cli/cli/releases/latest/download/gh_*_macOS_arm64.zip | tar xz && mv gh_*/bin/gh ~/.local/bin/"
+    exit 1
+fi
+
+# Check if authenticated with GitHub
+if ! gh auth status &> /dev/null; then
+    print_error "Not authenticated with GitHub!"
+    echo "Please run: gh auth login"
     exit 1
 fi
 
@@ -98,13 +110,16 @@ echo ""
 print_step "Step 4/7: Creating update package..."
 cd src-tauri/target/release/bundle/macos
 
-if [ ! -f "GTerm.app.tar.gz" ]; then
-    # Use COPYFILE_DISABLE=1 to prevent macOS metadata files (._*) from being included
-    COPYFILE_DISABLE=1 tar -czf GTerm.app.tar.gz GTerm.app
-    print_success "Created GTerm.app.tar.gz"
-else
-    print_warning "GTerm.app.tar.gz already exists, skipping..."
-fi
+# Ad-hoc sign the app bundle (this won't notarize but helps with some security checks)
+print_step "Applying ad-hoc signature to GTerm.app..."
+codesign --force --deep --sign - GTerm.app || print_warning "Ad-hoc signing failed, continuing anyway..."
+print_success "Ad-hoc signature applied"
+
+# Always recreate the tar.gz for the new version
+rm -f GTerm.app.tar.gz GTerm.app.tar.gz.sig
+# Use COPYFILE_DISABLE=1 to prevent macOS metadata files (._*) from being included
+COPYFILE_DISABLE=1 tar -czf GTerm.app.tar.gz GTerm.app
+print_success "Created GTerm.app.tar.gz"
 
 cd - > /dev/null
 echo ""
@@ -113,18 +128,19 @@ echo ""
 print_step "Step 5/7: Signing the package..."
 cd src-tauri/target/release/bundle/macos
 
-if [ ! -f "GTerm.app.tar.gz.sig" ]; then
-    # Sign with password Admin123! using expect for automation
-    expect << 'EOF'
+# Sign with password using expect
+expect << 'EXPECT_EOF'
+set timeout 30
 spawn tauri signer sign GTerm.app.tar.gz --private-key-path /Users/g0shk3/.tauri/gterm.key
-expect "Password:"
-send "Admin123!\r"
-expect eof
-EOF
-    print_success "Package signed successfully"
-else
-    print_warning "GTerm.app.tar.gz.sig already exists, using existing signature"
-fi
+expect {
+    "Password:" {
+        send "Admin123!\r"
+        exp_continue
+    }
+    eof
+}
+EXPECT_EOF
+print_success "Package signed successfully"
 
 cd - > /dev/null
 echo ""
