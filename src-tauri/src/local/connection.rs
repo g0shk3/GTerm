@@ -67,6 +67,10 @@ impl LocalConnection {
         cmd.env("TERM", "xterm-256color");
         cmd.env("COLORTERM", "truecolor");
 
+        // Set UTF-8 locale for proper Unicode/Cyrillic character support
+        cmd.env("LANG", "en_US.UTF-8");
+        cmd.env("LC_ALL", "en_US.UTF-8");
+
         // Spawn child process
         let child = pty_pair
             .slave

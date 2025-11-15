@@ -61,6 +61,11 @@ impl SshConnection {
         // Request PTY and start shell
         let mut channel = session.channel_session()?;
         channel.request_pty("xterm-256color", None, Some((80, 24, 0, 0)))?;
+
+        // Set UTF-8 locale environment variables for proper Unicode/Cyrillic support
+        let _ = channel.setenv("LANG", "en_US.UTF-8");
+        let _ = channel.setenv("LC_ALL", "en_US.UTF-8");
+
         channel.shell()?;
         channel.handle_extended_data(ssh2::ExtendedData::Merge)?;
 
