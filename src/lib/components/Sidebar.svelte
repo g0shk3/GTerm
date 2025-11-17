@@ -193,6 +193,20 @@
         + Manage Connections
       </button>
 
+      <button
+        on:click={() => dispatch('shortcuts')}
+        class="shortcuts-btn"
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="2" y="4" width="3" height="3" rx="0.5"/>
+          <rect x="6.5" y="4" width="3" height="3" rx="0.5"/>
+          <rect x="11" y="4" width="3" height="3" rx="0.5"/>
+          <rect x="2" y="9" width="7" height="3" rx="0.5"/>
+          <rect x="11" y="9" width="3" height="3" rx="0.5"/>
+        </svg>
+        Keyboard Shortcuts
+      </button>
+
       <div class="version-info">
         GTerm v{appVersion}
       </div>
@@ -299,6 +313,14 @@
     white-space: nowrap;
     flex-shrink: 0;
     margin-top: auto;
+  }
+
+  .shortcuts-btn {
+    @apply w-full px-4 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600;
+    @apply text-gray-700 dark:text-gray-300 rounded-lg transition-colors text-sm font-medium;
+    @apply flex items-center justify-center gap-2;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .version-info {

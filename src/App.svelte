@@ -8,8 +8,10 @@
   import { tabs, activeTabId, createTab, closeTab, splitPane, renameTab, duplicateTab } from './lib/stores/tabs';
   import { hostsStore, loadHosts } from './lib/stores/hosts';
   import { loadSnippets } from './lib/stores/snippets';
+  import { loadShortcuts } from './lib/stores/shortcuts';
   import HostManager from './lib/components/HostManager.svelte';
   import HostSelector from './lib/components/HostSelector.svelte';
+  import ShortcutsManager from './lib/components/ShortcutsManager.svelte';
   import Terminal from './lib/components/Terminal.svelte';
   import SFTP from './lib/components/SFTP.svelte';
   import SplitPane from './lib/components/SplitPane.svelte';
@@ -17,6 +19,7 @@
 
   let showHostManager = false;
   let showHostSelector = false;
+  let showShortcutsManager = false;
   let currentView = 'welcome'; // 'welcome', 'tabs'
   let sidebarOpen = true;
   let editingHost = null;
@@ -31,9 +34,10 @@
       document.documentElement.classList.add('dark');
     }
 
-    // Load saved hosts and snippets
+    // Load saved hosts, snippets, and shortcuts
     await loadHosts();
     await loadSnippets();
+    await loadShortcuts();
 
     // Check for updates (silent check)
     try {
@@ -510,6 +514,7 @@
       on:connect={handleSidebarConnect}
       on:edit={handleSidebarEdit}
       on:manage={() => { showHostManager = true; editingHost = null; }}
+      on:shortcuts={() => { showShortcutsManager = true; }}
     />
   </div>
 
@@ -528,6 +533,13 @@
       on:select={handleHostSelectorSelect}
       on:edit={handleHostSelectorEdit}
       on:close={() => { showHostSelector = false; }}
+    />
+  {/if}
+
+  <!-- Shortcuts Manager Modal -->
+  {#if showShortcutsManager}
+    <ShortcutsManager
+      on:close={() => { showShortcutsManager = false; }}
     />
   {/if}
 
