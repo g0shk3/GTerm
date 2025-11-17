@@ -136,6 +136,9 @@
     // Clear terminal handler
     window.addEventListener('clearTerminal', handleClearTerminal);
 
+    // Tab switched handler - refocus terminal
+    window.addEventListener('tabSwitched', handleTabSwitched);
+
     // Connect based on type
     if (connectionType === 'local') {
       await connectLocal();
@@ -240,6 +243,12 @@
     if (fitAddon) {
       fitAddon.fit();
     }
+    // Refocus terminal after resize (e.g., when sidebar toggles)
+    if (terminal && $activeTabId === tab.id) {
+      setTimeout(() => {
+        terminal.focus();
+      }, 50);
+    }
   }
 
   function handleClearTerminal() {
@@ -248,9 +257,19 @@
     }
   }
 
+  function handleTabSwitched() {
+    // Refocus terminal when switching to this tab
+    if (terminal && $activeTabId === tab.id) {
+      setTimeout(() => {
+        terminal.focus();
+      }, 100);
+    }
+  }
+
   onDestroy(async () => {
     window.removeEventListener('resize', handleResize);
     window.removeEventListener('clearTerminal', handleClearTerminal);
+    window.removeEventListener('tabSwitched', handleTabSwitched);
 
     if (unlistenOutput) await unlistenOutput();
     if (unlistenClosed) await unlistenClosed();
@@ -275,7 +294,7 @@
   }
 </script>
 
-<div class="terminal-wrapper">
+<div class="terminal-wrapper" on:click={() => terminal?.focus()}>
   {#if showSearch}
     <Search {searchAddon} on:close={() => showSearch = false} />
   {/if}

@@ -49,6 +49,10 @@ export function closeTab(id) {
     if (current === id) {
       const currentTabs = get(tabs);
       if (currentTabs.length > 0) {
+        // Dispatch event to refocus terminal after tab switch
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('tabSwitched'));
+        }, 50);
         return currentTabs[currentTabs.length - 1].id;
       }
       return null;

@@ -97,12 +97,30 @@
     createTab(host);
     showHostManager = false;
     currentView = 'tabs';
+
+    // Auto-close sidebar when connecting to a new host
+    if (sidebarOpen) {
+      sidebarOpen = false;
+      // Trigger terminal resize after sidebar animation completes
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 300);
+    }
   }
 
   function handleSidebarConnect(event) {
     const host = event.detail;
     createTab(host);
     currentView = 'tabs';
+
+    // Auto-close sidebar when connecting to a host
+    if (sidebarOpen) {
+      sidebarOpen = false;
+      // Trigger terminal resize after sidebar animation completes
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 300);
+    }
   }
 
   function handleSidebarEdit(event) {
@@ -121,6 +139,15 @@
     };
     createTab(localHost);
     currentView = 'tabs';
+
+    // Auto-close sidebar when opening local terminal
+    if (sidebarOpen) {
+      sidebarOpen = false;
+      // Trigger terminal resize after sidebar animation completes
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 300);
+    }
   }
 
   function handleHostSelectorSelect(event) {
@@ -128,6 +155,15 @@
     createTab(host);
     showHostSelector = false;
     currentView = 'tabs';
+
+    // Auto-close sidebar when selecting a host
+    if (sidebarOpen) {
+      sidebarOpen = false;
+      // Trigger terminal resize after sidebar animation completes
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 300);
+    }
   }
 
   function handleHostSelectorEdit(event) {
@@ -146,6 +182,10 @@
 
   function switchTab(tabId) {
     activeTabId.set(tabId);
+    // Dispatch event to refocus terminal after tab switch
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('tabSwitched'));
+    }, 50);
   }
 
   function handleTabContextMenu(event, tab) {
@@ -321,6 +361,10 @@
     if (e.metaKey && e.key === ',') {
       e.preventDefault();
       sidebarOpen = !sidebarOpen;
+      // Trigger terminal resize after sidebar animation completes
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 300); // Match transition duration
       return;
     }
 
@@ -387,7 +431,13 @@
     </div>
 
     <div class="header-right">
-      <button on:click={() => sidebarOpen = !sidebarOpen} class="header-btn" title="Toggle connections">
+      <button on:click={() => {
+        sidebarOpen = !sidebarOpen;
+        // Trigger terminal resize after sidebar animation completes
+        setTimeout(() => {
+          window.dispatchEvent(new Event('resize'));
+        }, 300);
+      }} class="header-btn" title="Toggle connections">
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="2" y="3" width="14" height="12" rx="2" />
           <path d="M6 7h6M6 11h4" />

@@ -128,6 +128,10 @@
     if (e.key === 'Escape') {
       e.preventDefault();
       dispatch('close');
+      // Refocus terminal after modal closes
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('tabSwitched'));
+      }, 50);
       return;
     }
 
@@ -152,6 +156,10 @@
 
   function handleOverlayClick() {
     dispatch('close');
+    // Refocus terminal after modal closes
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('tabSwitched'));
+    }, 50);
   }
 </script>
 

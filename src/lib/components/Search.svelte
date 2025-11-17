@@ -29,6 +29,10 @@
   function handleClose() {
     searchAddon.clearDecorations();
     dispatch('close');
+    // Refocus terminal after search closes
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('tabSwitched'));
+    }, 50);
   }
 
   onMount(() => {

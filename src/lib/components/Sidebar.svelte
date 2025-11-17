@@ -127,6 +127,10 @@
 
   function toggleSidebar() {
     isOpen = !isOpen;
+    // Trigger terminal resize after sidebar animation completes
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+    }, 300); // Match transition duration
   }
 </script>
 
