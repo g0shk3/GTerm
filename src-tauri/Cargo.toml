@@ -1,6 +1,6 @@
 [package]
 name = "gterm"
-version = "1.0.20"
+version = "1.0.21"
 description = "Fast and secure macOS SSH Terminal"
 authors = ["GTerm Team"]
 edition = "2021"
