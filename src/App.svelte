@@ -9,6 +9,7 @@
   import { hostsStore, loadHosts } from './lib/stores/hosts';
   import { loadSnippets } from './lib/stores/snippets';
   import { loadShortcuts } from './lib/stores/shortcuts';
+  import { settings } from './lib/stores/settings';
   import HostManager from './lib/components/HostManager.svelte';
   import HostSelector from './lib/components/HostSelector.svelte';
   import ShortcutsManager from './lib/components/ShortcutsManager.svelte';
@@ -38,6 +39,11 @@
     await loadHosts();
     await loadSnippets();
     await loadShortcuts();
+
+    // Auto-start local terminal if setting is enabled
+    if ($settings.autoStartLocalTerminal) {
+      createLocalTerminal();
+    }
 
     // Check for updates (silent check)
     try {
@@ -91,10 +97,6 @@
     // Cleanup keyboard shortcuts
     document.removeEventListener('keydown', keyboardHandler);
   });
-
-  function toggleTheme() {
-    theme.update(t => t === 'dark' ? 'light' : 'dark');
-  }
 
   function handleNewConnection(event) {
     const host = event.detail;
@@ -448,18 +450,6 @@
           <rect x="2" y="3" width="14" height="12" rx="2" />
           <path d="M6 7h6M6 11h4" />
         </svg>
-      </button>
-      <button on:click={toggleTheme} class="header-btn" title="Toggle theme">
-        {#if $theme === 'dark'}
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-            <circle cx="9" cy="9" r="4" />
-            <path d="M9 1v2M9 15v2M1 9h2M15 9h2M3.5 3.5l1.4 1.4M13.1 13.1l1.4 1.4M3.5 14.5l1.4-1.4M13.1 4.9l1.4-1.4" stroke="currentColor" stroke-width="1.5" />
-          </svg>
-        {:else}
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-            <path d="M9 2a7 7 0 0 0 6 11.9A7 7 0 1 1 4.1 9 7 7 0 0 0 9 2z" />
-          </svg>
-        {/if}
       </button>
     </div>
   </header>

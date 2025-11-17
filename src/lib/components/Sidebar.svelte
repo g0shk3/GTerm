@@ -1,6 +1,7 @@
 <script>
   import { createEventDispatcher, onMount } from 'svelte';
   import { hostsStore, removeAndReloadHost, addAndReloadHost, updateHosts } from '../stores/hosts';
+  import { settings, toggleAutoStartLocalTerminal } from '../stores/settings';
   import { dndzone } from 'svelte-dnd-action';
   import { getVersion } from '@tauri-apps/api/app';
 
@@ -145,6 +146,23 @@
     </button>
     {#if isOpen}
       <h3 class="sidebar-title">Connections</h3>
+      <div class="header-actions">
+        <button on:click={() => dispatch('shortcuts')} class="icon-btn" title="Keyboard Shortcuts">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="2" y="4" width="3" height="3" rx="0.5"/>
+            <rect x="6.5" y="4" width="3" height="3" rx="0.5"/>
+            <rect x="11" y="4" width="3" height="3" rx="0.5"/>
+            <rect x="2" y="9" width="7" height="3" rx="0.5"/>
+            <rect x="11" y="9" width="3" height="3" rx="0.5"/>
+          </svg>
+        </button>
+        <button on:click={toggleAutoStartLocalTerminal} class="icon-btn" class:active={$settings.autoStartLocalTerminal} title="Auto-start local terminal">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M2 3h12v10H2z"/>
+            <path d="M4 6l2 2-2 2M7 10h3"/>
+          </svg>
+        </button>
+      </div>
     {/if}
   </div>
 
@@ -191,20 +209,6 @@
         class="manage-btn"
       >
         + Manage Connections
-      </button>
-
-      <button
-        on:click={() => dispatch('shortcuts')}
-        class="shortcuts-btn"
-      >
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-          <rect x="2" y="4" width="3" height="3" rx="0.5"/>
-          <rect x="6.5" y="4" width="3" height="3" rx="0.5"/>
-          <rect x="11" y="4" width="3" height="3" rx="0.5"/>
-          <rect x="2" y="9" width="7" height="3" rx="0.5"/>
-          <rect x="11" y="9" width="3" height="3" rx="0.5"/>
-        </svg>
-        Keyboard Shortcuts
       </button>
 
       <div class="version-info">
@@ -296,6 +300,27 @@
     flex-shrink: 0;
   }
 
+  .header-actions {
+    @apply flex items-center gap-1;
+  }
+
+  .icon-btn {
+    @apply p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors;
+    @apply text-gray-600 dark:text-gray-400;
+  }
+
+  .icon-btn.active {
+    @apply bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400;
+  }
+
+  .icon-btn:hover {
+    @apply text-gray-700 dark:text-gray-300;
+  }
+
+  .icon-btn.active:hover {
+    @apply text-blue-700 dark:text-blue-300;
+  }
+
   .sidebar-content {
     @apply flex flex-col p-4 gap-4;
     flex: 1;
@@ -313,14 +338,6 @@
     white-space: nowrap;
     flex-shrink: 0;
     margin-top: auto;
-  }
-
-  .shortcuts-btn {
-    @apply w-full px-4 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600;
-    @apply text-gray-700 dark:text-gray-300 rounded-lg transition-colors text-sm font-medium;
-    @apply flex items-center justify-center gap-2;
-    white-space: nowrap;
-    flex-shrink: 0;
   }
 
   .version-info {
