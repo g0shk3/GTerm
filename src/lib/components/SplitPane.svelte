@@ -41,9 +41,9 @@
 
       <!-- Render terminal or SFTP based on pane type -->
       {#if pane.type === 'terminal'}
-        <Terminal tab={{ ...tab, ...pane, id: pane.id }} />
+        <Terminal {pane} tabId={tab.id} />
       {:else if pane.type === 'sftp'}
-        <SFTP tab={{ ...tab, ...pane, id: pane.id }} />
+        <SFTP {pane} tabId={tab.id} />
       {/if}
     </div>
   {/each}

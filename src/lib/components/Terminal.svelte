@@ -7,11 +7,12 @@
   import { WebLinksAddon } from '@xterm/addon-web-links';
   import { SearchAddon } from '@xterm/addon-search';
   import '@xterm/xterm/css/xterm.css';
-  import { updateTabConnection, activeTabId } from '../stores/tabs';
+  import { updatePaneConnection, activeTabId } from '../stores/tabs';
   import { getSnippets } from '../stores/snippets';
   import Search from './Search.svelte';
 
-  export let tab;
+  export let pane;
+  export let tabId;
 
   let terminalElement;
   let terminal;
@@ -83,10 +84,10 @@
     // Handle user input
     terminal.onData(async (data) => {
       try {
-        const connectionType = tab.host?.type || 'ssh';
+        const connectionType = pane.host?.type || 'ssh';
         const command = connectionType === 'local' ? 'local_send_input' : 'ssh_send_input';
         await invoke(command, {
-          sessionId: tab.sessionId,
+          sessionId: pane.sessionId,
           data: data,
         });
       } catch (error) {
@@ -97,10 +98,10 @@
     // Handle terminal resize
     terminal.onResize(async ({ cols, rows }) => {
       try {
-        const connectionType = tab.host?.type || 'ssh';
+        const connectionType = pane.host?.type || 'ssh';
         const command = connectionType === 'local' ? 'local_resize' : 'ssh_resize';
         await invoke(command, {
-          sessionId: tab.sessionId,
+          sessionId: pane.sessionId,
           cols,
           rows,
         });
@@ -110,24 +111,24 @@
     });
 
     // Determine event channel prefix based on connection type
-    const connectionType = tab.host?.type || 'ssh';
+    const connectionType = pane.host?.type || 'ssh';
     const eventPrefix = connectionType === 'local' ? 'terminal' : 'ssh';
 
     // Listen for terminal output
-    unlistenOutput = await listen(`${eventPrefix}-output:${tab.sessionId}`, (event) => {
+    unlistenOutput = await listen(`${eventPrefix}-output:${pane.sessionId}`, (event) => {
       terminal.write(event.payload);
     });
 
     // Listen for connection closed
-    unlistenClosed = await listen(`${eventPrefix}-closed:${tab.sessionId}`, () => {
+    unlistenClosed = await listen(`${eventPrefix}-closed:${pane.sessionId}`, () => {
       terminal.write('\r\n\x1b[31mConnection closed\x1b[0m\r\n');
-      updateTabConnection(tab.id, false);
+      updatePaneConnection(tabId, pane.id, false);
     });
 
     // Listen for errors
-    unlistenError = await listen(`${eventPrefix}-error:${tab.sessionId}`, (event) => {
+    unlistenError = await listen(`${eventPrefix}-error:${pane.sessionId}`, (event) => {
       terminal.write(`\r\n\x1b[31mError: ${event.payload}\x1b[0m\r\n`);
-      updateTabConnection(tab.id, false);
+      updatePaneConnection(tabId, pane.id, false);
     });
 
     // Window resize handler
@@ -153,16 +154,16 @@
       errorMessage = '';
 
       await invoke('ssh_connect', {
-        sessionId: tab.sessionId,
-        host: tab.host.host,
-        port: tab.host.port,
-        username: tab.host.username,
-        privateKeyPath: tab.host.privateKeyPath,
-        passphrase: tab.host.passphrase || null,
+        sessionId: pane.sessionId,
+        host: pane.host.host,
+        port: pane.host.port,
+        username: pane.host.username,
+        privateKeyPath: pane.host.privateKeyPath,
+        passphrase: pane.host.passphrase || null,
       });
 
       connecting = false;
-      updateTabConnection(tab.id, true);
+      updatePaneConnection(tabId, pane.id, true);
 
       // Fit terminal after connection
       setTimeout(() => {
@@ -172,14 +173,14 @@
       }, 100);
 
       // Execute snippet if assigned
-      if (tab.host.snippetId) {
-        await executeSnippet(tab.host.snippetId);
+      if (pane.host.snippetId) {
+        await executeSnippet(pane.host.snippetId);
       }
     } catch (error) {
       connecting = false;
       errorMessage = `Failed to connect: ${error}`;
       terminal.write(`\r\n\x1b[31m${errorMessage}\x1b[0m\r\n`);
-      updateTabConnection(tab.id, false);
+      updatePaneConnection(tabId, pane.id, false);
     }
   }
 
@@ -189,13 +190,13 @@
       errorMessage = '';
 
       await invoke('local_connect', {
-        sessionId: tab.sessionId,
-        shell: tab.host.shell || null,
-        cwd: tab.host.cwd || null,
+        sessionId: pane.sessionId,
+        shell: pane.host.shell || null,
+        cwd: pane.host.cwd || null,
       });
 
       connecting = false;
-      updateTabConnection(tab.id, true);
+      updatePaneConnection(tabId, pane.id, true);
 
       // Fit terminal after connection
       setTimeout(() => {
@@ -205,14 +206,14 @@
       }, 100);
 
       // Execute snippet if assigned
-      if (tab.host.snippetId) {
-        await executeSnippet(tab.host.snippetId);
+      if (pane.host.snippetId) {
+        await executeSnippet(pane.host.snippetId);
       }
     } catch (error) {
       connecting = false;
       errorMessage = `Failed to start local terminal: ${error}`;
       terminal.write(`\r\n\x1b[31m${errorMessage}\x1b[0m\r\n`);
-      updateTabConnection(tab.id, false);
+      updatePaneConnection(tabId, pane.id, false);
     }
   }
 
@@ -225,12 +226,12 @@
         // Add a small delay to ensure terminal is ready
         await new Promise(resolve => setTimeout(resolve, 500));
 
-        const connectionType = tab.host?.type || 'ssh';
+        const connectionType = pane.host?.type || 'ssh';
         const command = connectionType === 'local' ? 'local_send_input' : 'ssh_send_input';
 
         // Send the snippet command with Enter
         await invoke(command, {
-          sessionId: tab.sessionId,
+          sessionId: pane.sessionId,
           data: snippet.content + '\n',
         });
       }
@@ -244,7 +245,7 @@
       fitAddon.fit();
     }
     // Refocus terminal after resize (e.g., when sidebar toggles)
-    if (terminal && $activeTabId === tab.id) {
+    if (terminal && $activeTabId === tabId) {
       setTimeout(() => {
         terminal.focus();
       }, 50);
@@ -259,7 +260,7 @@
 
   function handleTabSwitched() {
     // Refocus terminal when switching to this tab
-    if (terminal && $activeTabId === tab.id) {
+    if (terminal && $activeTabId === tabId) {
       setTimeout(() => {
         terminal.focus();
       }, 100);
@@ -276,9 +277,9 @@
     if (unlistenError) await unlistenError();
 
     try {
-      const connectionType = tab.host?.type || 'ssh';
+      const connectionType = pane.host?.type || 'ssh';
       const command = connectionType === 'local' ? 'local_disconnect' : 'ssh_disconnect';
-      await invoke(command, { sessionId: tab.sessionId });
+      await invoke(command, { sessionId: pane.sessionId });
     } catch (error) {
       console.error('Failed to disconnect:', error);
     }
@@ -289,7 +290,7 @@
   });
 
   // Focus terminal when this tab becomes active
-  $: if (terminal && $activeTabId === tab.id) {
+  $: if (terminal && $activeTabId === tabId) {
     terminal.focus();
   }
 </script>
@@ -303,10 +304,10 @@
     <div class="connecting-overlay">
       <div class="connecting-spinner"></div>
       <div class="connecting-text">
-        {#if tab.host?.type === 'local'}
+        {#if pane.host?.type === 'local'}
           Starting local terminal...
         {:else}
-          Connecting to {tab.host.host}...
+          Connecting to {pane.host.host}...
         {/if}
       </div>
     </div>
@@ -315,7 +316,7 @@
   {#if errorMessage}
     <div class="error-overlay">
       <div class="error-text">{errorMessage}</div>
-      <button class="btn-retry" on:click={tab.host?.type === 'local' ? connectLocal : connectSSH}>Retry</button>
+      <button class="btn-retry" on:click={pane.host?.type === 'local' ? connectLocal : connectSSH}>Retry</button>
     </div>
   {/if}
 
@@ -354,4 +355,3 @@
     @apply px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors;
   }
 </style>
-

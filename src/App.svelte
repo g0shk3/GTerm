@@ -309,6 +309,8 @@
       e.preventDefault();
       if ($activeTabId) {
         splitPane($activeTabId, 'vertical');
+        // Trigger terminal resize after split
+        setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
       }
       return;
     }
@@ -371,6 +373,8 @@
       e.preventDefault();
       if ($activeTabId) {
         splitPane($activeTabId, 'horizontal');
+        // Trigger terminal resize after split
+        setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
       }
       return;
     }
@@ -494,17 +498,7 @@
         <!-- Render all tabs but show only the active one -->
         {#each $tabs as tab (tab.id)}
           <div class="tab-content" class:hidden={tab.id !== $activeTabId}>
-            {#if tab.splitLayout !== 'none'}
-              <!-- Render split panes -->
-              <SplitPane {tab} />
-            {:else}
-              <!-- Render single pane (legacy mode) -->
-              {#if tab.type === 'terminal'}
-                <Terminal {tab} />
-              {:else if tab.type === 'sftp'}
-                <SFTP {tab} />
-              {/if}
-            {/if}
+            <SplitPane {tab} />
           </div>
         {/each}
       {/if}

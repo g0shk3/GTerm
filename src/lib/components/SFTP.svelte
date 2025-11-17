@@ -3,7 +3,7 @@
   import { invoke } from '@tauri-apps/api/core';
   import { open, save } from '@tauri-apps/plugin-dialog';
 
-  export let tab;
+  export let pane;
 
   let currentPath = '/home';
   let files = [];
@@ -20,7 +20,7 @@
     error = '';
     try {
       files = await invoke('sftp_list_directory', {
-        sessionId: tab.sessionId,
+        sessionId: pane.sessionId,
         path: path,
       });
       currentPath = path;
@@ -52,7 +52,7 @@
 
       if (savePath) {
         await invoke('sftp_download', {
-          sessionId: tab.sessionId,
+          sessionId: pane.sessionId,
           remotePath: file.path,
           localPath: savePath,
         });
@@ -75,7 +75,7 @@
         const remotePath = `${currentPath}/${fileName}`;
 
         await invoke('sftp_upload', {
-          sessionId: tab.sessionId,
+          sessionId: pane.sessionId,
           localPath: selected.path,
           remotePath: remotePath,
         });
