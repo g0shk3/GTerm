@@ -17,6 +17,64 @@ Fast, secure, and lightweight SSH terminal for macOS built with Tauri 2.0, Rust,
 - **Real-time I/O**: Zero lag terminal experience
 - **Port Forwarding**: Local and dynamic port forwarding support (coming soon)
 
+## Installation
+
+### Download
+
+Download the latest release from the [Releases page](https://github.com/g0shk3/GTerm/releases/latest):
+- **GTerm_1.0.x_aarch64.dmg** - For Apple Silicon (M1/M2/M3)
+- **GTerm_1.0.x_x64.dmg** - For Intel Macs
+
+### macOS Security Note
+
+Since GTerm is not notarized by Apple, macOS will block it by default. This is normal for apps distributed outside the Mac App Store.
+
+**⚠️ IMPORTANT: Installation on a new computer requires removing quarantine TWICE**
+
+macOS applies quarantine attributes to both the DMG file AND the app inside it. You must remove quarantine from both to avoid "damaged" or "Library missing" errors.
+
+**Recommended Installation Steps:**
+
+1. **Download the DMG file** from GitHub releases
+2. **Remove quarantine from DMG first:**
+   ```bash
+   xattr -cr ~/Downloads/GTerm_*.dmg
+   ```
+3. **Mount the DMG** by double-clicking it
+4. **Copy GTerm.app to Applications:**
+   ```bash
+   cp -R /Volumes/GTerm/GTerm.app /Applications/
+   ```
+5. **Remove quarantine from the app:**
+   ```bash
+   xattr -cr /Applications/GTerm.app
+   ```
+6. **Launch the app:**
+   ```bash
+   open /Applications/GTerm.app
+   ```
+
+**Why is this needed twice?**
+- First `xattr -cr` removes quarantine from the DMG archive
+- Second `xattr -cr` removes quarantine from the app inside
+- Without both steps, you may see errors like:
+  - `"GTerm.app" is damaged and can't be opened`
+  - `Library not loaded: /opt/homebrew/*/libssl.3.dylib`
+  - `dyld: Library not loaded`
+
+**Why is this needed at all?**
+macOS Gatekeeper blocks apps that aren't signed with an Apple Developer certificate. GTerm is open-source and safe, but requires these steps to bypass Gatekeeper.
+
+**Alternative: System Settings Method**
+1. Try to open GTerm normally
+2. Go to **System Settings > Privacy & Security**
+3. Scroll down and click **"Open Anyway"** next to the GTerm message
+4. Click **"Open"** in the confirmation dialog
+
+### Auto-Update
+
+GTerm includes built-in auto-update functionality. Once installed, the app will automatically notify you of new versions and download updates in the background.
+
 ## Requirements
 
 - macOS Sonoma (14.0) or later
