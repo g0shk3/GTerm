@@ -34,7 +34,7 @@ impl SshConnection {
         host: String,
         port: u16,
         username: String,
-        private_key_path: String,
+        private_key_path: Option<String>,
         passphrase: Option<String>,
         app_handle: tauri::AppHandle,
     ) -> Result<()> {
@@ -47,12 +47,16 @@ impl SshConnection {
         session.handshake()?;
 
         // Authenticate with private key (in blocking mode)
-        let key_path = Path::new(&private_key_path);
-        if let Some(pass) = passphrase.as_ref() {
-            session.userauth_pubkey_file(&username, None, key_path, Some(pass))?;
-        } else {
-            session.userauth_pubkey_file(&username, None, key_path, None)?;
+        if let Some(key_path_str) = private_key_path {
+            let key_path = Path::new(&key_path_str);
+            if let Some(pass) = passphrase.as_ref() {
+                session.userauth_pubkey_file(&username, None, key_path, Some(pass))?;
+            } else {
+                session.userauth_pubkey_file(&username, None, key_path, None)?;
+            }
         }
+        // If no key path is provided, authentication will be attempted without it.
+        // This relies on the server allowing other auth methods (e.g., none, password).
 
         if !session.authenticated() {
             return Err(anyhow!("Authentication failed"));

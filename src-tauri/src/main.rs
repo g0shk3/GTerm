@@ -26,7 +26,7 @@ async fn ssh_connect(
     host: String,
     port: u16,
     username: String,
-    private_key_path: String,
+    private_key_path: Option<String>,
     passphrase: Option<String>,
     app_handle: tauri::AppHandle,
     state: State<'_, AppState>,
@@ -105,6 +105,8 @@ async fn get_private_key_type(path: String) -> Result<String, String> {
 async fn generate_keypair(output_path: String) -> Result<String, String> {
     generate_ed25519_keypair(&output_path).map_err(|e| e.to_string())
 }
+
+
 
 #[tauri::command]
 async fn sftp_list_directory(

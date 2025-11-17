@@ -2,6 +2,7 @@
   import { onMount, createEventDispatcher } from 'svelte';
   import { getHosts, addAndReloadHost, removeAndReloadHost } from '../stores/hosts';
   import { getSnippets, addAndReloadSnippet, removeAndReloadSnippet } from '../stores/snippets';
+  import { getPrivateKeys, addAndReloadPrivateKey, removeAndReloadPrivateKey } from '../stores/privateKeys';
   import { open } from '@tauri-apps/plugin-dialog';
   import { invoke } from '@tauri-apps/api/core';
 
@@ -11,11 +12,11 @@
 
   let hosts = [];
   let snippets = [];
+  let privateKeys = [];
   let selectedHost = null;
   let editMode = false;
-  let showSnippetManager = false;
   let keyTypeWarning = '';
-  let activeTab = 'hosts'; // 'hosts' or 'snippets'
+  let activeTab = 'hosts'; // 'hosts', 'snippets', or 'privateKeys'
 
   let form = {
     id: null,
@@ -23,7 +24,7 @@
     host: '',
     port: 22,
     username: '',
-    privateKeyPath: '',
+    privateKeyId: null, // Changed from privateKeyPath
     passphrase: '',
     snippetId: null,
   };
@@ -34,14 +35,29 @@
     content: '',
   };
 
+  let privateKeyForm = {
+    id: null,
+    name: '',
+    path: '',
+  };
+
   onMount(async () => {
     hosts = await getHosts();
     snippets = await getSnippets();
+    privateKeys = await getPrivateKeys();
 
-    // Ако има редактиран профил, попълни формата
+    // If editing an existing host, populate the form
     if (editingHost) {
-      form = { ...editingHost };
+      // Find the corresponding private key ID from the path
+      const key = privateKeys.find(pk => pk.path === editingHost.privateKeyPath);
+      form = { 
+        ...editingHost,
+        privateKeyId: key ? key.id : null,
+      };
       editMode = true;
+      if (editingHost.privateKeyPath) {
+        checkKeyType(editingHost.privateKeyPath);
+      }
     }
 
     // Handle Escape key to close modal
@@ -57,7 +73,7 @@
     };
   });
 
-  async function handleSelectKeyFile() {
+  async function handleSelectKeyFile(formObject = privateKeyForm) {
     const selected = await open({
       multiple: false,
       directory: false,
@@ -68,12 +84,15 @@
     });
 
     if (selected) {
-      form.privateKeyPath = selected.path;
-      await checkKeyType(selected.path);
+        formObject.path = selected.path;
     }
   }
 
   async function checkKeyType(path) {
+    if (!path) {
+      keyTypeWarning = '';
+      return;
+    }
     try {
       const keyType = await invoke('get_private_key_type', { path });
       if (keyType === 'rsa') {
@@ -83,21 +102,19 @@
       }
     } catch (error) {
       console.error('Failed to check key type:', error);
-      keyTypeWarning = '';
+      keyTypeWarning = '⚠️ Could not read key type. Ensure the path is correct.';
     }
   }
 
-  async function handleGenerateKey() {
+  async function handleGenerateKey(formObject = privateKeyForm) {
     try {
       const homeDir = await invoke('get_home_dir');
-      const keyPath = `${homeDir}/.ssh/gterm_ed25519`;
+      const keyPath = `${homeDir}/.ssh/gterm_ed25519_${Date.now()}`;
 
       const publicKey = await invoke('generate_keypair', { outputPath: keyPath });
 
-      form.privateKeyPath = keyPath;
-      keyTypeWarning = '';
-
-      // Copy public key to clipboard
+      formObject.path = keyPath;
+      
       await navigator.clipboard.writeText(publicKey);
       alert('New ed25519 key generated successfully!\nPublic key has been copied to clipboard.');
     } catch (error) {
@@ -106,23 +123,27 @@
   }
 
   async function handleSave() {
-    if (!form.name || !form.host || !form.username || !form.privateKeyPath) {
-      alert('Please fill in all required fields');
+    if (!form.name || !form.host || !form.username) {
+      alert('Please fill in Name, Host, and Username fields.');
       return;
     }
+
+    // Find the private key path from the ID
+    const selectedKey = privateKeys.find(pk => pk.id === form.privateKeyId);
+    const privateKeyPath = selectedKey ? selectedKey.path : null;
 
     const host = {
       ...form,
       id: form.id || `host-${Date.now()}`,
+      privateKeyPath: privateKeyPath, // Ensure path is included
     };
+    delete host.privateKeyId; // Clean up the ID from the final host object
 
     hosts = await addAndReloadHost(host);
 
-    // Ако е editMode (е редактиране), затвори modal
     if (editMode) {
       dispatch('close');
     } else {
-      // Иначе, е нова връзка, отвори я
       dispatch('connect', host);
     }
 
@@ -139,10 +160,16 @@
   }
 
   function handleEdit(host) {
-    form = { ...host };
+    const key = privateKeys.find(pk => pk.path === host.privateKeyPath);
+    form = { 
+      ...host,
+      privateKeyId: key ? key.id : null,
+    };
     editMode = true;
     selectedHost = host;
-    checkKeyType(host.privateKeyPath);
+    if (host.privateKeyPath) {
+      checkKeyType(host.privateKeyPath);
+    }
   }
 
   function handleConnect(host) {
@@ -156,7 +183,7 @@
       host: '',
       port: 22,
       username: '',
-      privateKeyPath: '',
+      privateKeyId: null,
       passphrase: '',
       snippetId: null,
     };
@@ -183,7 +210,6 @@
   async function handleDeleteSnippet(id) {
     if (confirm('Are you sure you want to delete this snippet?')) {
       snippets = await removeAndReloadSnippet(id);
-      // If the deleted snippet was selected in the form, clear the selection
       if (form.snippetId === id) {
         form.snippetId = null;
       }
@@ -202,9 +228,55 @@
     };
   }
 
+  async function handleSavePrivateKey() {
+    if (!privateKeyForm.name || !privateKeyForm.path) {
+      alert('Please fill in both private key name and path');
+      return;
+    }
+
+    const privateKey = {
+      ...privateKeyForm,
+      id: privateKeyForm.id || `privateKey-${Date.now()}`,
+    };
+
+    privateKeys = await addAndReloadPrivateKey(privateKey);
+    resetPrivateKeyForm();
+  }
+
+  async function handleDeletePrivateKey(id) {
+    if (confirm('Are you sure you want to delete this private key?')) {
+      // Check if this key is being used by any host
+      const isKeyInUse = hosts.some(h => {
+        const key = privateKeys.find(pk => pk.id === id);
+        return h.privateKeyPath === key?.path;
+      });
+
+      if (isKeyInUse) {
+        alert('This key is currently in use by at least one host and cannot be deleted.');
+        return;
+      }
+
+      privateKeys = await removeAndReloadPrivateKey(id);
+      if (form.privateKeyId === id) {
+        form.privateKeyId = null;
+      }
+    }
+  }
+
+  function handleEditPrivateKey(privateKey) {
+    privateKeyForm = { ...privateKey };
+  }
+
+  function resetPrivateKeyForm() {
+    privateKeyForm = {
+      id: null,
+      name: '',
+      path: '',
+    };
+  }
+
   function handleClose() {
     dispatch('close');
-    // Refocus terminal after modal closes
     setTimeout(() => {
       window.dispatchEvent(new CustomEvent('tabSwitched'));
     }, 50);
@@ -221,6 +293,13 @@
           on:click={() => activeTab = 'hosts'}
         >
           SSH Connections
+        </button>
+        <button
+          class="header-tab"
+          class:active={activeTab === 'privateKeys'}
+          on:click={() => activeTab = 'privateKeys'}
+        >
+          Private Keys
         </button>
         <button
           class="header-tab"
@@ -291,23 +370,16 @@
           </div>
 
           <div class="form-group">
-            <label for="privateKey">Private Key *</label>
-            <div class="flex gap-2">
-              <input
-                id="privateKey"
-                type="text"
-                bind:value={form.privateKeyPath}
-                placeholder="~/.ssh/id_ed25519"
-                class="flex-1"
-                required
-              />
-              <button type="button" class="btn-sm btn-secondary" on:click={handleSelectKeyFile}>
-                Browse
-              </button>
-              <button type="button" class="btn-sm btn-secondary" on:click={handleGenerateKey}>
-                Generate
-              </button>
-            </div>
+            <label for="privateKey">Private Key (optional)</label>
+            <select id="privateKey" bind:value={form.privateKeyId} on:change={(e) => {
+              const selectedKey = privateKeys.find(pk => pk.id === e.target.value);
+              checkKeyType(selectedKey ? selectedKey.path : null);
+            }}>
+              <option value={null}>None</option>
+              {#each privateKeys as pk (pk.id)}
+                <option value={pk.id}>{pk.name}</option>
+              {/each}
+            </select>
             {#if keyTypeWarning}
               <div class="warning-message">{keyTypeWarning}</div>
             {/if}
@@ -344,6 +416,96 @@
             {/if}
           </div>
         </form>
+      </div>
+      {/if}
+
+      <!-- PRIVATE KEYS TAB -->
+      {#if activeTab === 'privateKeys'}
+      <div class="form-section">
+        <h3 class="text-lg font-semibold mb-3">
+          {privateKeyForm.id ? 'Edit Private Key' : 'Add New Private Key'}
+        </h3>
+
+        <form on:submit|preventDefault={handleSavePrivateKey}>
+          <div class="form-group">
+            <label for="privateKey-name">Name *</label>
+            <input
+              id="privateKey-name"
+              type="text"
+              bind:value={privateKeyForm.name}
+              placeholder="e.g., My Personal Key"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="privateKey-path">Key Path *</label>
+             <div class="flex gap-2">
+              <input
+                id="privateKey-path"
+                type="text"
+                bind:value={privateKeyForm.path}
+                placeholder="~/.ssh/id_ed25519"
+                class="flex-1"
+                required
+              />
+              <button type="button" class="btn-sm btn-secondary" on:click={() => handleSelectKeyFile(privateKeyForm)}>
+                Browse
+              </button>
+              <button type="button" class="btn-sm btn-secondary" on:click={() => handleGenerateKey(privateKeyForm)}>
+                Generate
+              </button>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">
+              {privateKeyForm.id ? 'Update' : 'Create'}
+            </button>
+            {#if privateKeyForm.id}
+              <button type="button" class="btn-secondary" on:click={resetPrivateKeyForm}>
+                Cancel
+              </button>
+            {/if}
+          </div>
+        </form>
+
+        <!-- Private Keys List -->
+        <div class="snippets-list-section">
+          <h3 class="text-lg font-semibold mb-3 mt-6">Your Saved Keys</h3>
+          {#if privateKeys.length === 0}
+            <p class="text-gray-500 dark:text-gray-400 text-sm">No private keys saved yet</p>
+          {:else}
+            <div class="snippets-list">
+              {#each privateKeys as pk (pk.id)}
+                <div class="snippet-item">
+                  <div class="snippet-info">
+                    <div class="snippet-name">{pk.name}</div>
+                    <div class="snippet-preview">{pk.path}</div>
+                  </div>
+                  <div class="snippet-actions">
+                    <button
+                      type="button"
+                      class="snippet-btn snippet-edit-btn"
+                      on:click={() => handleEditPrivateKey(pk)}
+                      title="Edit"
+                    >
+                      ✎
+                    </button>
+                    <button
+                      type="button"
+                      class="snippet-btn snippet-delete-btn"
+                      on:click={() => handleDeletePrivateKey(pk.id)}
+                      title="Delete"
+                    >
+                      🗑
+                    </button>
+                  </div>
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </div>
       </div>
       {/if}
 
