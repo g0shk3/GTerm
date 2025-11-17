@@ -348,12 +348,10 @@
       return;
     }
 
-    // Cmd+T - нов connection (отвори host manager за добавяне)
+    // Cmd+T - нов локален терминал
     if (e.metaKey && e.key === 't') {
       e.preventDefault();
-      showHostManager = true;
-      editingHost = null;
-      currentView = 'tabs'; // Switch to tabs view
+      createLocalTerminal();
       return;
     }
 

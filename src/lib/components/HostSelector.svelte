@@ -9,6 +9,7 @@
   let filteredHosts = [];
   let selectedIndex = -1;
   let searchInput;
+  let hostsListElement;
   let contextMenu = null;
   let contextMenuHost = null;
 
@@ -42,7 +43,7 @@
     }
     dndConfig.items = filteredHosts;
     dndConfig.dragDisabled = searchQuery.trim() !== '';
-    selectedIndex = -1;
+    selectedIndex = filteredHosts.length > 0 ? 0 : -1;
   }
 
   onMount(() => {
@@ -127,11 +128,15 @@
   function handleKeyDown(e) {
     if (e.key === 'Escape') {
       e.preventDefault();
-      dispatch('close');
-      // Refocus terminal after modal closes
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('tabSwitched'));
-      }, 50);
+      if (searchQuery !== '') {
+        searchQuery = '';
+      } else {
+        dispatch('close');
+        // Refocus terminal after modal closes
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('tabSwitched'));
+        }, 50);
+      }
       return;
     }
 
@@ -161,6 +166,14 @@
       window.dispatchEvent(new CustomEvent('tabSwitched'));
     }, 50);
   }
+
+  $: if (selectedIndex >= 0 && hostsListElement) {
+    // Ensure the element exists before trying to scroll
+    const selectedItem = hostsListElement.querySelector(`.host-item-wrapper.selected`);
+    if (selectedItem) {
+      selectedItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
 </script>
 
 <div class="modal-overlay" on:click={handleOverlayClick} role="presentation">
@@ -179,6 +192,7 @@
           type="text"
           placeholder="Search hosts..."
           class="search-input"
+          autocomplete="off"
         />
         {#if searchQuery}
           <button class="clear-btn" on:click={() => searchQuery = ''}>
@@ -193,6 +207,7 @@
     <!-- Hosts List -->
     <div
       class="hosts-list"
+      bind:this={hostsListElement}
       use:dndzone={dndConfig}
       on:consider={handleDndConsider}
       on:finalize={handleDndFinalize}
@@ -210,7 +225,6 @@
           <div
             class="host-item-wrapper"
             class:selected={index === selectedIndex}
-            on:mouseenter={() => selectedIndex = index}
             on:contextmenu={(e) => handleContextMenu(e, host)}
           >
 
@@ -266,9 +280,6 @@
 
     <!-- Footer -->
     <div class="footer">
-      <div class="shortcut-info">
-        Press <kbd>↑↓</kbd> to navigate, <kbd>↵</kbd> to connect, <kbd>Esc</kbd> to close
-      </div>
     </div>
   </div>
 </div>
@@ -475,4 +486,9 @@
     border: none !important;
     box-shadow: none !important;
   }
+
+  .host-item-wrapper.selected {
+    @apply bg-blue-500/10 border-blue-500;
+  }
 </style>
+
