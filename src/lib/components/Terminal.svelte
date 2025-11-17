@@ -24,6 +24,7 @@
   let connecting = true;
   let errorMessage = '';
   let showSearch = false;
+  let isSwitchingTab = false;
 
   onMount(async () => {
     // Initialize xterm.js
@@ -310,6 +311,11 @@
           fitAddon.fit();
         } catch (error) {
           console.error('Failed to fit terminal:', error);
+        } finally {
+          // If we were switching tabs, make the terminal visible again after fitting.
+          if (isSwitchingTab) {
+            isSwitchingTab = false;
+          }
         }
       });
     }
@@ -328,11 +334,13 @@
   }
 
   function handleTabSwitched() {
-    // Refocus terminal when switching to this tab
+    // Refocus and resize terminal when switching to this tab
     if (terminal && $activeTabId === tabId) {
-      setTimeout(() => {
-        terminal.focus();
-      }, 100);
+      // Hide terminal briefly to prevent flicker during resize
+      isSwitchingTab = true;
+      // This ensures the terminal is resized correctly when it becomes visible,
+      // as fitAddon cannot work on hidden elements.
+      handleResize();
     }
   }
 
@@ -395,7 +403,7 @@
     </div>
   {/if}
 
-  <div class="terminal-container" bind:this={terminalElement}></div>
+  <div class="terminal-container" bind:this={terminalElement} style:visibility={isSwitchingTab ? 'hidden' : 'visible'}></div>
 </div>
 
 <style>
