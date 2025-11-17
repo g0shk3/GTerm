@@ -52,8 +52,7 @@
         "skipTaskbar": false,
         "center": true,
         "titleBarStyle": "Overlay",
-        "hiddenTitle": true,
-        "devtools": false
+        "hiddenTitle": true
       }
     ],
     "security": {

@@ -109,11 +109,9 @@ impl LocalConnection {
         tokio::spawn(async move {
             while let Some(data) = input_rx.recv().await {
                 if let Err(_e) = writer_clone.write_all(&data) {
-                    // Optional: log write error
                     break;
                 }
                 if let Err(_e) = writer_clone.flush() {
-                    // Optional: log flush error
                     break;
                 }
             }
@@ -138,7 +136,7 @@ impl LocalConnection {
                         let _ = app_handle_clone.emit(&format!("terminal-output:{}", session_id_clone), data);
                     },
                     Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                        std::thread::sleep(std::time::Duration::from_millis(10));
+                        std::thread::sleep(std::time::Duration::from_millis(1));
                         continue;
                     },
                     Err(_e) => {
@@ -180,8 +178,7 @@ impl LocalConnection {
                 pixel_width: 0,
                 pixel_height: 0,
             })
-            .map_err(|e| anyhow!("Failed to resize PTY: {}", e))?;
-            Ok(())
+            .map_err(|e| anyhow!("Failed to resize PTY: {}", e))
         } else {
             Err(anyhow!("No active PTY"))
         }

@@ -129,7 +129,7 @@ impl SshConnection {
                                     }
                                 }
                                 Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                                    // Can't write now, will try again next iteration
+                                    // No data available for writing
                                 }
                                 Err(_) => {
                                     // Write error, discard buffer
@@ -196,8 +196,8 @@ impl SshConnection {
     pub async fn resize(&self, cols: u32, rows: u32) -> Result<()> {
         let mut channel_guard = self.channel.lock().await;
         if let Some(ref mut channel) = *channel_guard {
-            channel.request_pty_size(cols, rows, Some(0), Some(0))?;
-            Ok(())
+            channel.request_pty_size(cols, rows, Some(0), Some(0))
+                .map_err(|e| anyhow!("Failed to resize PTY: {}", e))
         } else {
             Err(anyhow!("No active channel"))
         }

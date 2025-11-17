@@ -31,6 +31,11 @@
       cursorBlink: true,
       fontSize: 14,
       fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+      scrollback: 10000, // Increase scrollback buffer to 10,000 lines
+      fastScrollModifier: 'shift',
+      fastScrollSensitivity: 5,
+      rows: 24, // Set initial rows
+      cols: 80, // Set initial cols
       theme: {
         background: '#1f2937', // gray-800 - same as sidebar and welcome screen
         foreground: '#ffffff',
@@ -54,6 +59,13 @@
         brightWhite: '#ffffff',
       },
       allowProposedApi: true,
+      windowsMode: false,
+      convertEol: false,
+      screenReaderMode: false,
+      allowTransparency: false,
+      drawBoldTextInBrightColors: true,
+      rightClickSelectsWord: true,
+      smoothScrollDuration: 0, // Disable smooth scrolling for better performance
     });
 
     fitAddon = new FitAddon();
@@ -91,7 +103,7 @@
           data: data,
         });
       } catch (error) {
-        console.error('Failed to send input:', error);
+        console.error('[Terminal] Failed to send input:', error);
       }
     });
 
@@ -106,7 +118,7 @@
           rows,
         });
       } catch (error) {
-        console.error('Failed to resize:', error);
+        console.error('[Terminal] Failed to resize:', error);
       }
     });
 
@@ -166,11 +178,29 @@
       updatePaneConnection(tabId, pane.id, true);
 
       // Fit terminal after connection
-      setTimeout(() => {
+      setTimeout(async () => {
+        // First fit the terminal to the container
         fitAddon.fit();
+
+        // Wait for the next frame to ensure fit has completed
+        await new Promise(resolve => requestAnimationFrame(resolve));
+
+        // Now get the actual terminal dimensions after fit
+        const { cols, rows } = terminal;
+
+        // Manually trigger a resize event to sync backend with actual terminal size
+        try {
+          await invoke('ssh_resize', {
+            sessionId: pane.sessionId,
+            cols,
+            rows,
+          });
+        } catch (error) {
+          console.error('Failed to send initial resize:', error);
+        }
         // Focus terminal so user can start typing immediately
         terminal.focus();
-      }, 100);
+      }, 150);
 
       // Execute snippet if assigned
       if (pane.host.snippetId) {
@@ -199,11 +229,29 @@
       updatePaneConnection(tabId, pane.id, true);
 
       // Fit terminal after connection
-      setTimeout(() => {
+      setTimeout(async () => {
+        // First fit the terminal to the container
         fitAddon.fit();
+
+        // Wait for the next frame to ensure fit has completed
+        await new Promise(resolve => requestAnimationFrame(resolve));
+
+        // Now get the actual terminal dimensions after fit
+        const { cols, rows } = terminal;
+
+        // Manually trigger a resize event to sync backend with actual terminal size
+        try {
+          await invoke('local_resize', {
+            sessionId: pane.sessionId,
+            cols,
+            rows,
+          });
+        } catch (error) {
+          console.error('Failed to send initial resize:', error);
+        }
         // Focus terminal so user can start typing immediately
         terminal.focus();
-      }, 100);
+      }, 150);
 
       // Execute snippet if assigned
       if (pane.host.snippetId) {
@@ -241,8 +289,15 @@
   }
 
   function handleResize() {
-    if (fitAddon) {
-      fitAddon.fit();
+    if (fitAddon && terminal) {
+      // Use requestAnimationFrame to ensure DOM has been updated
+      requestAnimationFrame(() => {
+        try {
+          fitAddon.fit();
+        } catch (error) {
+          console.error('Failed to fit terminal:', error);
+        }
+      });
     }
     // Refocus terminal after resize (e.g., when sidebar toggles)
     if (terminal && $activeTabId === tabId) {
