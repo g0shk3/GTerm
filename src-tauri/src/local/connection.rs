@@ -132,7 +132,7 @@ impl LocalConnection {
                         break;
                     },
                     Ok(n) => {
-                        let data = &buffer[..n];
+                        let data = String::from_utf8_lossy(&buffer[..n]).to_string();
                         let _ = app_handle_clone.emit(&format!("terminal-output:{}", session_id_clone), data);
                     },
                     Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
