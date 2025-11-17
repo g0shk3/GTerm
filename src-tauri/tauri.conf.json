@@ -1,6 +1,6 @@
 {
   "productName": "GTerm",
-  "version": "1.0.26",
+  "version": "1.0.27",
   "identifier": "com.gterm.terminal",
   "build": {
     "beforeDevCommand": "npm run dev",
