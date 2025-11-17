@@ -50,9 +50,12 @@ async fn ssh_send_input(
     data: String,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
-    let connections = state.connections.lock().await;
+    let connection = {
+        let connections = state.connections.lock().await;
+        connections.get(&session_id).cloned()
+    };
 
-    if let Some(connection) = connections.get(&session_id) {
+    if let Some(connection) = connection {
         connection.send_input(data).await.map_err(|e| e.to_string())
     } else {
         Err("Connection not found".to_string())
@@ -80,9 +83,12 @@ async fn ssh_resize(
     rows: u32,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
-    let connections = state.connections.lock().await;
+    let connection = {
+        let connections = state.connections.lock().await;
+        connections.get(&session_id).cloned()
+    };
 
-    if let Some(connection) = connections.get(&session_id) {
+    if let Some(connection) = connection {
         connection.resize(cols, rows).await.map_err(|e| e.to_string())
     } else {
         Err("Connection not found".to_string())
@@ -114,10 +120,13 @@ async fn sftp_list_directory(
     path: String,
     state: State<'_, AppState>,
 ) -> Result<Vec<ssh::sftp::FileEntry>, String> {
-    let connections = state.connections.lock().await;
+    let connection = {
+        let connections = state.connections.lock().await;
+        connections.get(&session_id).cloned()
+    };
 
-    if let Some(connection) = connections.get(&session_id) {
-        list_directory(connection, &path).await.map_err(|e| e.to_string())
+    if let Some(connection) = connection {
+        list_directory(&connection, &path).await.map_err(|e| e.to_string())
     } else {
         Err("Connection not found".to_string())
     }
@@ -130,10 +139,13 @@ async fn sftp_download(
     local_path: String,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
-    let connections = state.connections.lock().await;
+    let connection = {
+        let connections = state.connections.lock().await;
+        connections.get(&session_id).cloned()
+    };
 
-    if let Some(connection) = connections.get(&session_id) {
-        download_file(connection, &remote_path, &local_path).await.map_err(|e| e.to_string())
+    if let Some(connection) = connection {
+        download_file(&connection, &remote_path, &local_path).await.map_err(|e| e.to_string())
     } else {
         Err("Connection not found".to_string())
     }
@@ -146,10 +158,13 @@ async fn sftp_upload(
     remote_path: String,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
-    let connections = state.connections.lock().await;
+    let connection = {
+        let connections = state.connections.lock().await;
+        connections.get(&session_id).cloned()
+    };
 
-    if let Some(connection) = connections.get(&session_id) {
-        upload_file(connection, &local_path, &remote_path).await.map_err(|e| e.to_string())
+    if let Some(connection) = connection {
+        upload_file(&connection, &local_path, &remote_path).await.map_err(|e| e.to_string())
     } else {
         Err("Connection not found".to_string())
     }
@@ -183,9 +198,12 @@ async fn local_send_input(
     data: String,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
-    let connections = state.local_connections.lock().await;
+    let connection = {
+        let connections = state.local_connections.lock().await;
+        connections.get(&session_id).cloned()
+    };
 
-    if let Some(connection) = connections.get(&session_id) {
+    if let Some(connection) = connection {
         connection.send_input(data).await.map_err(|e| e.to_string())
     } else {
         Err("Connection not found".to_string())
@@ -213,9 +231,12 @@ async fn local_resize(
     rows: u32,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
-    let connections = state.local_connections.lock().await;
+    let connection = {
+        let connections = state.local_connections.lock().await;
+        connections.get(&session_id).cloned()
+    };
 
-    if let Some(connection) = connections.get(&session_id) {
+    if let Some(connection) = connection {
         connection.resize(cols, rows).await.map_err(|e| e.to_string())
     } else {
         Err("Connection not found".to_string())

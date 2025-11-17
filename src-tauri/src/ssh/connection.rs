@@ -173,8 +173,10 @@ impl SshConnection {
                 // Release lock
                 drop(channel_guard);
 
-                // Small sleep to prevent busy-waiting
-                std::thread::sleep(std::time::Duration::from_millis(1));
+                // A small sleep is still necessary to prevent the busy-wait loop from
+                // consuming 100% CPU when there is no I/O activity.
+                // We reduce it significantly from 1ms to 50 microseconds.
+                std::thread::sleep(std::time::Duration::from_micros(50));
             }
         });
 

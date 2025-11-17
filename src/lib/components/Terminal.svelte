@@ -127,8 +127,22 @@
     const eventPrefix = connectionType === 'local' ? 'terminal' : 'ssh';
 
     // Listen for terminal output
+    let outputBuffer = '';
+    let animationFrameId = null;
+
+    function writeBuffered() {
+      if (outputBuffer.length > 0 && terminal) {
+        terminal.write(outputBuffer);
+        outputBuffer = '';
+      }
+      animationFrameId = null;
+    }
+
     unlistenOutput = await listen(`${eventPrefix}-output:${pane.sessionId}`, (event) => {
-      terminal.write(event.payload);
+      outputBuffer += event.payload;
+      if (!animationFrameId) {
+        animationFrameId = requestAnimationFrame(writeBuffered);
+      }
     });
 
     // Listen for connection closed
@@ -326,6 +340,12 @@
     window.removeEventListener('resize', handleResize);
     window.removeEventListener('clearTerminal', handleClearTerminal);
     window.removeEventListener('tabSwitched', handleTabSwitched);
+
+    if (animationFrameId) {
+      cancelAnimationFrame(animationFrameId);
+    }
+    // Final flush of the buffer
+    writeBuffered();
 
     if (unlistenOutput) await unlistenOutput();
     if (unlistenClosed) await unlistenClosed();

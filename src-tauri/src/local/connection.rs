@@ -136,7 +136,7 @@ impl LocalConnection {
                         let _ = app_handle_clone.emit(&format!("terminal-output:{}", session_id_clone), data);
                     },
                     Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                        std::thread::sleep(std::time::Duration::from_millis(1));
+                        std::thread::sleep(std::time::Duration::from_micros(50));
                         continue;
                     },
                     Err(_e) => {
