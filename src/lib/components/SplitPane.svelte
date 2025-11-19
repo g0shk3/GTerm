@@ -71,7 +71,7 @@
   }
 
   .split-pane.active {
-    @apply border-blue-500/30;
+    @apply border-gray-500/30;
   }
 
   .split-container.vertical .split-pane:not(:last-child) {
