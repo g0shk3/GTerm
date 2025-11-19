@@ -277,30 +277,32 @@
   }
 
   const keyboardHandler = (e) => {
-    // Cmd+W - затвори текущия таб
-    if (e.metaKey && e.key === 'w') {
+    // Use `e.code` for layout-independent shortcuts
+
+    // Cmd+W - Close current tab
+    if (e.metaKey && e.code === 'KeyW') {
       e.preventDefault();
       handleCloseTab($activeTabId);
       return;
     }
 
-    // Cmd+Q - затвори приложението
-    if (e.metaKey && e.key === 'q') {
+    // Cmd+Q - Quit application
+    if (e.metaKey && e.code === 'KeyQ') {
       e.preventDefault();
       getCurrentWindow().close();
       return;
     }
 
-    // Cmd+K - изчисти терминала
-    if (e.metaKey && e.key === 'k') {
+    // Cmd+K - Clear terminal
+    if (e.metaKey && e.code === 'KeyK') {
       e.preventDefault();
-      // Dispatch global event за clear на терминала
+      // Dispatch global event to clear terminal
       window.dispatchEvent(new CustomEvent('clearTerminal'));
       return;
     }
 
-    // Cmd+Shift+D - дупликат на сесията
-    if (e.metaKey && e.shiftKey && (e.key === 'D' || e.key === 'd')) {
+    // Cmd+Shift+D - Duplicate session
+    if (e.metaKey && e.shiftKey && e.code === 'KeyD') {
       e.preventDefault();
       const currentTab = $tabs.find(t => t.id === $activeTabId);
       if (currentTab) {
@@ -309,9 +311,8 @@
       return;
     }
 
-    // Cmd+Shift+E - вертикален split (ляво/дясно)
-    // Проверка ПРЕДИ Cmd+E, защото Shift прави key да е 'E' (главна буква)
-    if (e.metaKey && e.shiftKey && (e.key === 'E' || e.key === 'e')) {
+    // Cmd+Shift+E - Vertical split
+    if (e.metaKey && e.shiftKey && e.code === 'KeyE') {
       e.preventDefault();
       if ($activeTabId) {
         splitPane($activeTabId, 'vertical');
@@ -321,14 +322,14 @@
       return;
     }
 
-    // Cmd+E - отвори host selector (быстър избор на профил)
-    if (e.metaKey && !e.shiftKey && (e.key === 'e' || e.key === 'E')) {
+    // Cmd+E - Open host selector
+    if (e.metaKey && !e.shiftKey && e.code === 'KeyE') {
       e.preventDefault();
       showHostSelector = true;
       return;
     }
 
-    // Cmd+1 до Cmd+9 - превключи към таб 1-9
+    // Cmd+1 to Cmd+9 - Switch to tab 1-9
     if (e.metaKey && e.key >= '1' && e.key <= '9') {
       e.preventDefault();
       const tabIndex = parseInt(e.key) - 1;
@@ -338,17 +339,17 @@
       return;
     }
 
-    // Cmd+[ и Cmd+] - превключи към предишен/следващ таб
+    // Cmd+[ and Cmd+] - Switch to previous/next tab
     if (e.metaKey && (e.key === '[' || e.key === ']')) {
       e.preventDefault();
       const currentIndex = $tabs.findIndex(t => t.id === $activeTabId);
       if (currentIndex !== -1) {
         let newIndex;
         if (e.key === '[') {
-          // Предишен таб (с wraparound)
+          // Previous tab (with wraparound)
           newIndex = currentIndex > 0 ? currentIndex - 1 : $tabs.length - 1;
         } else {
-          // Следващ таб (с wraparound)
+          // Next tab (with wraparound)
           newIndex = currentIndex < $tabs.length - 1 ? currentIndex + 1 : 0;
         }
         switchTab($tabs[newIndex].id);
@@ -356,8 +357,8 @@
       return;
     }
 
-    // Cmd+T - нов локален терминал
-    if (e.metaKey && e.key === 't') {
+    // Cmd+T - New local terminal
+    if (e.metaKey && e.code === 'KeyT') {
       e.preventDefault();
       createLocalTerminal();
       return;
@@ -374,8 +375,8 @@
       return;
     }
 
-    // Cmd+D - хоризонтален split (горе/долу)
-    if (e.metaKey && !e.shiftKey && e.key === 'd') {
+    // Cmd+D - Horizontal split
+    if (e.metaKey && !e.shiftKey && e.code === 'KeyD') {
       e.preventDefault();
       if ($activeTabId) {
         splitPane($activeTabId, 'horizontal');
@@ -387,6 +388,11 @@
   };
 
   $: activeTab = $tabs.find(t => t.id === $activeTabId);
+
+  // Switch to welcome view when last tab is closed
+  $: if ($tabs.length === 0 && currentView === 'tabs') {
+    currentView = 'welcome';
+  }
 </script>
 
 <div class="app-container">

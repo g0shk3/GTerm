@@ -40,24 +40,47 @@ export function createTab(host) {
 }
 
 export function closeTab(id) {
-  tabs.update(t => {
-    const filtered = t.filter(tab => tab.id !== id);
-    return filtered;
-  });
+  // Find the index of the tab we are closing, BEFORE it's removed.
+  const allTabs = get(tabs);
+  const closingTabIndex = allTabs.findIndex(tab => tab.id === id);
 
-  activeTabId.update(current => {
-    if (current === id) {
-      const currentTabs = get(tabs);
-      if (currentTabs.length > 0) {
-        // Dispatch event to refocus terminal after tab switch
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('tabSwitched'));
-        }, 50);
-        return currentTabs[currentTabs.length - 1].id;
+  // If tab not found, do nothing.
+  if (closingTabIndex === -1) {
+    return;
+  }
+
+  // Update the tabs list by filtering out the closed tab.
+  tabs.update(t => t.filter(tab => tab.id !== id));
+
+  // Update the active tab ID.
+  activeTabId.update(currentActiveId => {
+    // Only proceed if we are closing the currently active tab.
+    if (currentActiveId === id) {
+      const remainingTabs = get(tabs); // This now has the tab removed.
+
+      // If no tabs are left, there's no active tab.
+      if (remainingTabs.length === 0) {
+        return null;
       }
-      return null;
+
+      // Determine the new index. Try to keep it the same.
+      // If the closed tab was the last one, the new index will be out of bounds,
+      // so we take the new last index.
+      const newIndex = Math.min(closingTabIndex, remainingTabs.length - 1);
+
+      // Get the ID of the new active tab.
+      const newActiveTabId = remainingTabs[newIndex].id;
+
+      // Dispatch event to handle focus in the UI.
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('tabSwitched'));
+      }, 50);
+
+      return newActiveTabId;
     }
-    return current;
+
+    // If we closed a background tab, the active tab doesn't change.
+    return currentActiveId;
   });
 }
 

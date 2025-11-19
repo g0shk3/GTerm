@@ -1,5 +1,6 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
+  import { get, derived } from 'svelte/store';
   import { invoke } from '@tauri-apps/api/core';
   import { listen } from '@tauri-apps/api/event';
   import { Terminal as XTerm } from '@xterm/xterm';
@@ -7,7 +8,7 @@
   import { WebLinksAddon } from '@xterm/addon-web-links';
   import { SearchAddon } from '@xterm/addon-search';
   import '@xterm/xterm/css/xterm.css';
-  import { updatePaneConnection, activeTabId } from '../stores/tabs';
+  import { tabs, closeTab, closePane, updatePaneConnection, activeTabId } from '../stores/tabs';
   import { getSnippets } from '../stores/snippets';
   import Search from './Search.svelte';
 
@@ -25,6 +26,20 @@
   let errorMessage = '';
   let showSearch = false;
   let isSwitchingTab = false;
+
+  const activePaneId = derived(tabs, $tabs => {
+    const currentTab = $tabs.find(t => t.id === tabId);
+    return currentTab ? currentTab.activePaneId : null;
+  });
+
+  // Handle focusing the terminal
+  $: if (terminal && $activeTabId === tabId && $activePaneId === pane.id) {
+    // Use a small timeout to ensure the terminal is visible and ready,
+    // especially after layout changes like closing a pane or switching tabs.
+    setTimeout(() => {
+      terminal.focus();
+    }, 50);
+  }
 
   onMount(async () => {
     // Initialize xterm.js
@@ -80,7 +95,8 @@
 
     // Add find shortcut
     terminal.attachCustomKeyEventHandler((event) => {
-      if (event.key === 'f' && (event.metaKey || event.ctrlKey) && event.type === 'keydown') {
+      // Use event.code for layout-independent shortcuts
+      if (event.code === 'KeyF' && (event.metaKey || event.ctrlKey) && event.type === 'keydown') {
         event.preventDefault();
         showSearch = true;
         return false; // Prevent event from being processed further
@@ -90,6 +106,25 @@
         showSearch = false;
         searchAddon.clearDecorations();
         return false;
+      }
+      // Add close on Ctrl+D if connection is closed
+      if (event.code === 'KeyD' && event.ctrlKey && event.type === 'keydown') {
+        const currentTabs = get(tabs);
+        const currentTab = currentTabs.find(t => t.id === tabId);
+        if (!currentTab) return true;
+
+        const currentPane = currentTab.panes.find(p => p.id === pane.id);
+
+        if (currentPane && !currentPane.connected) {
+          event.preventDefault();
+
+          if (currentTab.panes.length > 1) {
+            closePane(tabId, pane.id);
+          } else {
+            closeTab(tabId);
+          }
+          return false;
+        }
       }
       return true;
     });
@@ -371,11 +406,6 @@
       terminal.dispose();
     }
   });
-
-  // Focus terminal when this tab becomes active
-  $: if (terminal && $activeTabId === tabId) {
-    terminal.focus();
-  }
 </script>
 
 <div class="terminal-wrapper" on:click={() => terminal?.focus()}>
