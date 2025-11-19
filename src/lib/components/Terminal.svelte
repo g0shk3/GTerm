@@ -408,6 +408,8 @@
   });
 </script>
 
+<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
+<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 <div
   class="terminal-wrapper"
   on:click={() => terminal?.focus()}

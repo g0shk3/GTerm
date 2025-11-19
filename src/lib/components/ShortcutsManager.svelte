@@ -116,6 +116,7 @@
 </script>
 
 <div class="shortcuts-overlay" on:click={close} role="presentation">
+  <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
   <div
     class="shortcuts-modal"
     on:click|stopPropagation
@@ -229,17 +230,6 @@
 
   .close-btn {
     @apply p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 transition-colors;
-  }
-
-  .modal-toolbar {
-    @apply flex justify-end px-6 py-4 border-b border-gray-200 dark:border-gray-700;
-  }
-
-  .reset-btn {
-    @apply px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600;
-    @apply bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300;
-    @apply hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors;
-    @apply flex items-center gap-2 font-medium;
   }
 
   .shortcuts-content {

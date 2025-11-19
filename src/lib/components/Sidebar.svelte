@@ -437,10 +437,6 @@
     @apply h-px bg-gray-200 dark:bg-gray-700 my-1;
   }
 
-  .drag-handle {
-    @apply cursor-grab text-gray-400 dark:text-gray-500 pr-2;
-  }
-
   :global([dnd-zone]) {
     outline: none !important;
     border: none !important;

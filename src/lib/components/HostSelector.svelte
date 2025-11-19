@@ -177,6 +177,7 @@
 </script>
 
 <div class="modal-overlay" on:click={handleOverlayClick} role="presentation">
+  <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
   <div class="host-selector" on:click|stopPropagation on:keydown|stopPropagation role="dialog" tabindex="-1">
     <!-- Search Box -->
     <div class="search-container">
@@ -445,14 +446,6 @@
     @apply bg-gray-50 dark:bg-gray-900/50;
   }
 
-  .shortcut-info {
-    @apply text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2 justify-center;
-  }
-
-  kbd {
-    @apply px-2 py-0.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-mono text-xs;
-  }
-
   /* Custom scrollbar */
   .hosts-list::-webkit-scrollbar {
     width: 6px;
@@ -488,10 +481,6 @@
 
   .context-menu-divider {
     @apply h-px bg-gray-200 dark:bg-gray-700 my-1;
-  }
-
-  .drag-handle {
-    @apply cursor-grab text-gray-400 dark:text-gray-500 pr-2;
   }
 
   :global([dnd-zone]) {

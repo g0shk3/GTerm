@@ -41,6 +41,7 @@
   });
 </script>
 
+<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 <div class="search-bar-wrapper" on:keydown={handleKeyDown} role="search">
   <input
     type="text"
