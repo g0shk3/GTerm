@@ -29,6 +29,12 @@
   let editingTabId = null;
   let renameInput = '';
 
+  // Close context menu when clicking anywhere
+  const handleClick = () => {
+    tabContextMenu = null;
+    contextMenuTab = null;
+  };
+
   onMount(async () => {
     // Initialize theme
     if ($theme === 'dark') {
@@ -77,11 +83,6 @@
       console.error('Update check failed:', error);
     }
 
-    // Close context menu when clicking anywhere
-    const handleClick = () => {
-      tabContextMenu = null;
-      contextMenuTab = null;
-    };
     document.addEventListener('click', handleClick);
 
     // Register keyboard shortcuts - премахни стари, ако има
@@ -545,10 +546,18 @@
       class="context-menu"
       style="left: {tabContextMenu.x}px; top: {tabContextMenu.y}px;"
       on:click|stopPropagation
+      on:keydown={(e) => {
+        if (e.key === 'Escape') {
+          handleClick();
+        }
+      }}
+      role="menu"
+      tabindex="-1"
     >
       <button
         class="context-menu-item"
         on:click={handleRenameTab}
+        role="menuitem"
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M9.5 2L12 4.5L5 11.5L2 12L2.5 9L9.5 2Z"/>
@@ -558,6 +567,7 @@
       <button
         class="context-menu-item"
         on:click={handleDuplicateTab}
+        role="menuitem"
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
           <rect x="3" y="3" width="7" height="7" rx="1"/>
@@ -569,6 +579,7 @@
       <button
         class="context-menu-item danger"
         on:click={() => { handleCloseTab(contextMenuTab.id); tabContextMenu = null; }}
+        role="menuitem"
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M3 3l8 8M11 3l-8 8" />

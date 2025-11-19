@@ -224,10 +224,19 @@
     class="context-menu"
     style="left: {contextMenu.x}px; top: {contextMenu.y}px;"
     on:click|stopPropagation
+    on:keydown={(e) => {
+      if (e.key === 'Escape') {
+        contextMenu = null;
+        contextMenuHost = null;
+      }
+    }}
+    role="menu"
+    tabindex="-1"
   >
     <button
       class="context-menu-item"
       on:click={(e) => connectHost(contextMenuHost)}
+      role="menuitem"
     >
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
         <path d="M7 1v12M1 7h12"/>
@@ -237,6 +246,7 @@
     <button
       class="context-menu-item"
       on:click={(e) => editHost(e, contextMenuHost)}
+      role="menuitem"
     >
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
         <path d="M9.5 2L12 4.5L5 11.5L2 12L2.5 9L9.5 2Z"/>
@@ -246,6 +256,7 @@
     <button
       class="context-menu-item"
       on:click={(e) => duplicateHost(e, contextMenuHost)}
+      role="menuitem"
     >
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
         <rect x="3" y="3" width="7" height="7" rx="1"/>
@@ -257,6 +268,7 @@
     <button
       class="context-menu-item danger"
       on:click={(e) => deleteHost(e, contextMenuHost)}
+      role="menuitem"
     >
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
         <path d="M1 3h12M5 1h4M5 6v5M9 6v5"/>

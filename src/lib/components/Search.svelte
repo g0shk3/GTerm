@@ -41,7 +41,7 @@
   });
 </script>
 
-<div class="search-bar-wrapper" on:keydown={handleKeyDown}>
+<div class="search-bar-wrapper" on:keydown={handleKeyDown} role="search">
   <input
     type="text"
     bind:this={searchInput}

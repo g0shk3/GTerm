@@ -408,7 +408,19 @@
   });
 </script>
 
-<div class="terminal-wrapper" on:click={() => terminal?.focus()}>
+<div
+  class="terminal-wrapper"
+  on:click={() => terminal?.focus()}
+  on:keydown={(e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      terminal?.focus();
+    }
+  }}
+  tabindex="0"
+  role="application"
+  aria-label="Terminal"
+>
   {#if showSearch}
     <Search {searchAddon} on:close={() => showSearch = false} />
   {/if}

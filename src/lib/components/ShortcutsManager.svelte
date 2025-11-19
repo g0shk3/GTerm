@@ -115,8 +115,18 @@
   });
 </script>
 
-<div class="shortcuts-overlay" on:click={close}>
-  <div class="shortcuts-modal" on:click|stopPropagation>
+<div class="shortcuts-overlay" on:click={close} role="presentation">
+  <div
+    class="shortcuts-modal"
+    on:click|stopPropagation
+    on:keydown={(e) => {
+      if (e.key === 'Escape') {
+        close();
+      }
+    }}
+    role="dialog"
+    tabindex="-1"
+  >
     <div class="modal-header">
       <h2>Keyboard Shortcuts</h2>
       <button class="close-btn" on:click={close}>
