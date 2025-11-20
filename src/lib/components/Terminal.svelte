@@ -414,8 +414,10 @@
   class="terminal-wrapper"
   on:click={() => terminal?.focus()}
   on:keydown={(e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
+    if (e.key === 'Enter') {
       e.preventDefault();
+      terminal?.focus();
+    } else if (e.key === ' ') {
       terminal?.focus();
     }
   }}
