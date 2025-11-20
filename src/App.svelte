@@ -5,8 +5,9 @@
   import { ask } from '@tauri-apps/plugin-dialog';
   import { relaunch } from '@tauri-apps/plugin-process';
   import { theme } from './lib/stores/theme';
-  import { tabs, activeTabId, createTab, closeTab, splitPane, renameTab, duplicateTab } from './lib/stores/tabs';
+  import { tabs, activeTabId, createTab, closeTab, splitPane, renameTab, duplicateTab, reorderTabs } from './lib/stores/tabs';
   import { hostsStore, loadHosts } from './lib/stores/hosts';
+  import { dndzone } from 'svelte-dnd-action';
   import { loadSnippets } from './lib/stores/snippets';
   import { loadShortcuts } from './lib/stores/shortcuts';
   import { settings } from './lib/stores/settings';
@@ -28,6 +29,9 @@
   let contextMenuTab = null;
   let editingTabId = null;
   let renameInput = '';
+
+  // Separate array for tab display order (for drag and drop)
+  let tabsDisplayOrder = [];
 
   // Close context menu when clicking anywhere
   const handleClick = () => {
@@ -277,6 +281,21 @@
     tabContextMenu = null;
   }
 
+  // Sync display order with tabs store
+  $: tabsDisplayOrder = $tabs;
+
+  // Drag and drop handlers for tab reordering
+  function handleTabsDndConsider(e) {
+    // Update only the display order during drag (no terminal re-render)
+    tabsDisplayOrder = e.detail.items;
+  }
+
+  function handleTabsDndFinalize(e) {
+    // Persist the final order to the store
+    tabsDisplayOrder = e.detail.items;
+    reorderTabs(e.detail.items);
+  }
+
   const keyboardHandler = (e) => {
     // Use `e.code` for layout-independent shortcuts
 
@@ -399,10 +418,15 @@
 <div class="app-container">
   <!-- Modern Header -->
   <header class="modern-header" data-tauri-drag-region>
-    <div class="header-center" data-tauri-drag-region>
+    <div class="header-center">
       <!-- Modern Tabs -->
-      <div class="modern-tabs" data-tauri-drag-region>
-        {#each $tabs as tab (tab.id)}
+      <div
+        class="modern-tabs"
+        use:dndzone="{{ items: tabsDisplayOrder, flipDurationMs: 200, dropTargetStyle: {}, morphDisabled: true }}"
+        on:consider={handleTabsDndConsider}
+        on:finalize={handleTabsDndFinalize}
+      >
+        {#each tabsDisplayOrder as tab (tab.id)}
           <button
             class="modern-tab"
             class:active={tab.id === $activeTabId}

@@ -105,6 +105,10 @@ export function duplicateTab(id) {
   return newTab;
 }
 
+export function reorderTabs(newTabsOrder) {
+  tabs.set(newTabsOrder);
+}
+
 export function updateTabConnection(id, connected) {
   tabs.update(t => {
     const tab = t.find(tab => tab.id === id);
