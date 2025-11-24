@@ -427,7 +427,10 @@
 
 <div class="app-container">
   <!-- Modern Header -->
+  <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
   <header class="modern-header" data-tauri-drag-region on:dblclick={handleHeaderDoubleClick}>
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
     <div class="header-center" on:dblclick={handleHeaderDoubleClick}>
       <!-- Modern Tabs -->
       <div
@@ -489,6 +492,8 @@
         {/each}
       </div>
       <!-- Draggable spacer for window dragging -->
+      <!-- svelte-ignore a11y-click-events-have-key-events -->
+      <!-- svelte-ignore a11y-no-static-element-interactions -->
       <div class="header-spacer" data-tauri-drag-region on:dblclick={handleHeaderDoubleClick}></div>
     </div>
 
