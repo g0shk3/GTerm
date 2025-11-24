@@ -26,6 +26,7 @@
   let errorMessage = '';
   let showSearch = false;
   let isSwitchingTab = false;
+  let executingSnippet = false;
 
   const activePaneId = derived(tabs, $tabs => {
     const currentTab = $tabs.find(t => t.id === tabId);
@@ -131,6 +132,11 @@
 
     // Handle user input
     terminal.onData(async (data) => {
+      // Block user input while executing snippet to prevent race condition
+      if (executingSnippet) {
+        return;
+      }
+
       try {
         const connectionType = pane.host?.type || 'ssh';
         const command = connectionType === 'local' ? 'local_send_input' : 'ssh_send_input';
@@ -317,12 +323,15 @@
 
   async function executeSnippet(snippetId) {
     try {
+      // Set flag to block user input during snippet execution
+      executingSnippet = true;
+
       const snippets = await getSnippets();
       const snippet = snippets.find(s => s.id === snippetId);
 
       if (snippet && snippet.content) {
-        // Add a small delay to ensure terminal is ready
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Add a small delay to ensure terminal is ready (reduced from 500ms for better UX)
+        await new Promise(resolve => setTimeout(resolve, 200));
 
         const connectionType = pane.host?.type || 'ssh';
         const command = connectionType === 'local' ? 'local_send_input' : 'ssh_send_input';
@@ -335,6 +344,9 @@
       }
     } catch (error) {
       console.error('Failed to execute snippet:', error);
+    } finally {
+      // Always clear the flag, even if there was an error
+      executingSnippet = false;
     }
   }
 
