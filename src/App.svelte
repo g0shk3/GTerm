@@ -296,6 +296,16 @@
     reorderTabs(e.detail.items);
   }
 
+  // Handle double-click on header to maximize/fullscreen
+  function handleHeaderDoubleClick(e) {
+    // Only trigger on empty areas (not on tabs or buttons)
+    if (e.target.classList.contains('header-center') ||
+        e.target.classList.contains('modern-tabs') ||
+        e.target.classList.contains('modern-header')) {
+      getCurrentWindow().toggleMaximize();
+    }
+  }
+
   const keyboardHandler = (e) => {
     // Use `e.code` for layout-independent shortcuts
 
@@ -417,8 +427,8 @@
 
 <div class="app-container">
   <!-- Modern Header -->
-  <header class="modern-header" data-tauri-drag-region>
-    <div class="header-center">
+  <header class="modern-header" data-tauri-drag-region on:dblclick={handleHeaderDoubleClick}>
+    <div class="header-center" on:dblclick={handleHeaderDoubleClick}>
       <!-- Modern Tabs -->
       <div
         class="modern-tabs"
@@ -435,6 +445,17 @@
             on:contextmenu={(e) => handleTabContextMenu(e, tab)}
           >
             <div class="tab-content-wrapper">
+              <!-- Drag handle for tab reordering -->
+              <span class="tab-drag-handle" title="Drag to reorder">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                  <circle cx="3" cy="3" r="1" />
+                  <circle cx="3" cy="6" r="1" />
+                  <circle cx="3" cy="9" r="1" />
+                  <circle cx="6" cy="3" r="1" />
+                  <circle cx="6" cy="6" r="1" />
+                  <circle cx="6" cy="9" r="1" />
+                </svg>
+              </span>
               <span
                 class="tab-indicator"
                 class:connected={tab.connected}
@@ -467,9 +488,11 @@
           </button>
         {/each}
       </div>
+      <!-- Draggable spacer for window dragging -->
+      <div class="header-spacer" data-tauri-drag-region on:dblclick={handleHeaderDoubleClick}></div>
     </div>
 
-    <div class="header-right">
+    <div class="header-right" data-tauri-drag-region>
       <button on:click={() => {
         sidebarOpen = !sidebarOpen;
         // Trigger terminal resize after sidebar animation completes
@@ -642,6 +665,12 @@
     min-width: 0;
   }
 
+  .header-spacer {
+    @apply flex-1;
+    min-width: 20px;
+    min-height: 32px;
+  }
+
   .header-btn {
     @apply flex items-center gap-2 px-3 py-2 rounded-lg;
     @apply text-gray-700 dark:text-gray-300;
@@ -653,10 +682,11 @@
 
   /* Modern Tabs */
   .modern-tabs {
-    @apply flex items-center gap-2 flex-1;
+    @apply flex items-center gap-2;
     overflow-x: auto;
     scrollbar-width: none;
     min-width: 0;
+    flex: 0 1 auto;
   }
 
   .modern-tabs::-webkit-scrollbar {
@@ -680,6 +710,22 @@
 
   .tab-content-wrapper {
     @apply flex items-center gap-2;
+  }
+
+  .tab-drag-handle {
+    @apply flex items-center justify-center cursor-grab opacity-0;
+    @apply text-gray-400 hover:text-gray-600 dark:hover:text-gray-300;
+    @apply transition-opacity duration-200;
+    padding: 2px;
+    margin-left: -4px;
+  }
+
+  .tab-drag-handle:active {
+    cursor: grabbing;
+  }
+
+  .modern-tab:hover .tab-drag-handle {
+    opacity: 1;
   }
 
   .tab-indicator {
