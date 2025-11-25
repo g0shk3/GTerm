@@ -42,6 +42,13 @@
     }, 50);
   }
 
+  // Helper function to check if terminal is visible
+  function isTerminalVisible() {
+    if (!terminalElement) return false;
+    const rect = terminalElement.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+  }
+
   onMount(async () => {
     // Initialize xterm.js
     terminal = new XTerm({
@@ -92,7 +99,11 @@
     terminal.loadAddon(searchAddon);
 
     terminal.open(terminalElement);
-    fitAddon.fit();
+
+    // Only fit if terminal is visible (prevents issues when creating multiple tabs quickly)
+    if (isTerminalVisible()) {
+      fitAddon.fit();
+    }
 
     // Add find shortcut
     terminal.attachCustomKeyEventHandler((event) => {
@@ -235,27 +246,32 @@
 
       // Fit terminal after connection
       setTimeout(async () => {
-        // First fit the terminal to the container
-        fitAddon.fit();
+        // Only fit if terminal is visible
+        if (isTerminalVisible()) {
+          // First fit the terminal to the container
+          fitAddon.fit();
 
-        // Wait for the next frame to ensure fit has completed
-        await new Promise(resolve => requestAnimationFrame(resolve));
+          // Wait for the next frame to ensure fit has completed
+          await new Promise(resolve => requestAnimationFrame(resolve));
 
-        // Now get the actual terminal dimensions after fit
-        const { cols, rows } = terminal;
+          // Now get the actual terminal dimensions after fit
+          const { cols, rows } = terminal;
 
-        // Manually trigger a resize event to sync backend with actual terminal size
-        try {
-          await invoke('ssh_resize', {
-            sessionId: pane.sessionId,
-            cols,
-            rows,
-          });
-        } catch (error) {
-          console.error('Failed to send initial resize:', error);
+          // Manually trigger a resize event to sync backend with actual terminal size
+          try {
+            await invoke('ssh_resize', {
+              sessionId: pane.sessionId,
+              cols,
+              rows,
+            });
+          } catch (error) {
+            console.error('Failed to send initial resize:', error);
+          }
+          // Focus terminal so user can start typing immediately
+          if ($activeTabId === tabId && $activePaneId === pane.id) {
+            terminal.focus();
+          }
         }
-        // Focus terminal so user can start typing immediately
-        terminal.focus();
       }, 150);
 
       // Execute snippet if assigned
@@ -286,27 +302,32 @@
 
       // Fit terminal after connection
       setTimeout(async () => {
-        // First fit the terminal to the container
-        fitAddon.fit();
+        // Only fit if terminal is visible
+        if (isTerminalVisible()) {
+          // First fit the terminal to the container
+          fitAddon.fit();
 
-        // Wait for the next frame to ensure fit has completed
-        await new Promise(resolve => requestAnimationFrame(resolve));
+          // Wait for the next frame to ensure fit has completed
+          await new Promise(resolve => requestAnimationFrame(resolve));
 
-        // Now get the actual terminal dimensions after fit
-        const { cols, rows } = terminal;
+          // Now get the actual terminal dimensions after fit
+          const { cols, rows } = terminal;
 
-        // Manually trigger a resize event to sync backend with actual terminal size
-        try {
-          await invoke('local_resize', {
-            sessionId: pane.sessionId,
-            cols,
-            rows,
-          });
-        } catch (error) {
-          console.error('Failed to send initial resize:', error);
+          // Manually trigger a resize event to sync backend with actual terminal size
+          try {
+            await invoke('local_resize', {
+              sessionId: pane.sessionId,
+              cols,
+              rows,
+            });
+          } catch (error) {
+            console.error('Failed to send initial resize:', error);
+          }
+          // Focus terminal so user can start typing immediately
+          if ($activeTabId === tabId && $activePaneId === pane.id) {
+            terminal.focus();
+          }
         }
-        // Focus terminal so user can start typing immediately
-        terminal.focus();
       }, 150);
 
       // Execute snippet if assigned
@@ -351,11 +372,13 @@
   }
 
   function handleResize() {
-    if (fitAddon && terminal) {
+    if (fitAddon && terminal && isTerminalVisible()) {
       // Use requestAnimationFrame to ensure DOM has been updated
       requestAnimationFrame(() => {
         try {
-          fitAddon.fit();
+          if (isTerminalVisible()) {
+            fitAddon.fit();
+          }
         } catch (error) {
           console.error('Failed to fit terminal:', error);
         } finally {
@@ -367,7 +390,7 @@
       });
     }
     // Refocus terminal after resize (e.g., when sidebar toggles)
-    if (terminal && $activeTabId === tabId) {
+    if (terminal && $activeTabId === tabId && $activePaneId === pane.id) {
       setTimeout(() => {
         terminal.focus();
       }, 50);
@@ -387,7 +410,12 @@
       isSwitchingTab = true;
       // This ensures the terminal is resized correctly when it becomes visible,
       // as fitAddon cannot work on hidden elements.
-      handleResize();
+      // Wait for the element to become visible before fitting
+      requestAnimationFrame(() => {
+        if (isTerminalVisible()) {
+          handleResize();
+        }
+      });
     }
   }
 
