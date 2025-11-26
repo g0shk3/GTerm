@@ -5,7 +5,7 @@
   import { ask } from '@tauri-apps/plugin-dialog';
   import { relaunch } from '@tauri-apps/plugin-process';
   import { theme } from './lib/stores/theme';
-  import { tabs, activeTabId, createTab, closeTab, splitPane, renameTab, duplicateTab, reorderTabs } from './lib/stores/tabs';
+  import { tabs, activeTabId, createTab, closeTab, splitPane, renameTab, duplicateTab, reorderTabs, closePane } from './lib/stores/tabs';
   import { hostsStore, loadHosts } from './lib/stores/hosts';
   import { dndzone } from 'svelte-dnd-action';
   import { loadSnippets } from './lib/stores/snippets';
@@ -309,8 +309,22 @@
   const keyboardHandler = (e) => {
     // Use `e.code` for layout-independent shortcuts
 
+    // Cmd+Shift+W - Close current pane (when split)
+    if (e.metaKey && e.shiftKey && e.code === 'KeyW') {
+      e.preventDefault();
+      const currentTab = $tabs.find(t => t.id === $activeTabId);
+      if (currentTab && currentTab.panes && currentTab.panes.length > 1) {
+        // Close only the active pane
+        closePane(currentTab.id, currentTab.activePaneId);
+      } else {
+        // If only one pane, close the entire tab
+        handleCloseTab($activeTabId);
+      }
+      return;
+    }
+
     // Cmd+W - Close current tab
-    if (e.metaKey && e.code === 'KeyW') {
+    if (e.metaKey && !e.shiftKey && e.code === 'KeyW') {
       e.preventDefault();
       handleCloseTab($activeTabId);
       return;

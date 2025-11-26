@@ -54,6 +54,16 @@ export const defaultShortcuts = [
     category: 'panes'
   },
   {
+    id: 'close-pane',
+    name: 'Close Pane',
+    description: 'Close the current pane (when split)',
+    key: 'w',
+    metaKey: true,
+    shiftKey: true,
+    altKey: false,
+    category: 'panes'
+  },
+  {
     id: 'host-selector',
     name: 'Host Selector',
     description: 'Open quick host selector',
