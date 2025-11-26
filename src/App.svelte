@@ -18,10 +18,13 @@
   import SFTP from './lib/components/SFTP.svelte';
   import SplitPane from './lib/components/SplitPane.svelte';
   import Sidebar from './lib/components/Sidebar.svelte';
+  import ConfirmCloseModal from './lib/components/ConfirmCloseModal.svelte';
 
   let showHostManager = false;
   let showHostSelector = false;
   let showShortcutsManager = false;
+  let showConfirmCloseModal = false;
+  let tabToCloseId = null;
   let currentView = 'welcome'; // 'welcome', 'tabs'
   let sidebarOpen = true;
   let editingHost = null;
@@ -184,7 +187,27 @@
     showHostManager = true;
   }
 
-  function handleCloseTab(tabId) {
+  function requestCloseTab(tabId) {
+    tabToCloseId = tabId;
+    showConfirmCloseModal = true;
+  }
+
+  function confirmCloseTab() {
+    if (tabToCloseId) {
+      closeTab(tabToCloseId);
+      if ($tabs.length === 0) {
+        currentView = 'welcome';
+      }
+    }
+    cancelCloseTab();
+  }
+
+  function cancelCloseTab() {
+    showConfirmCloseModal = false;
+    tabToCloseId = null;
+  }
+
+  function closeTabImmediately(tabId) {
     closeTab(tabId);
     if ($tabs.length === 0) {
       currentView = 'welcome';
@@ -318,7 +341,7 @@
         closePane(currentTab.id, currentTab.activePaneId);
       } else {
         // If only one pane, close the entire tab
-        handleCloseTab($activeTabId);
+        closeTabImmediately($activeTabId);
       }
       return;
     }
@@ -326,7 +349,7 @@
     // Cmd+W - Close current tab
     if (e.metaKey && !e.shiftKey && e.code === 'KeyW') {
       e.preventDefault();
-      handleCloseTab($activeTabId);
+      closeTabImmediately($activeTabId);
       return;
     }
 
@@ -493,7 +516,7 @@
               {#if editingTabId !== tab.id}
                 <button
                   class="tab-close-btn"
-                  on:click|stopPropagation={() => handleCloseTab(tab.id)}
+                  on:click|stopPropagation={() => requestCloseTab(tab.id)}
                   title="Close"
                 >
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
@@ -606,6 +629,11 @@
     />
   {/if}
 
+  <!-- Tab Close Confirmation Modal -->
+  {#if showConfirmCloseModal}
+    <ConfirmCloseModal on:yes={confirmCloseTab} on:no={cancelCloseTab} />
+  {/if}
+
   <!-- Tab Context Menu -->
   {#if tabContextMenu && contextMenuTab}
     <div
@@ -625,7 +653,7 @@
         on:click={handleRenameTab}
         role="menuitem"
       >
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+        <svg width="14" height="14" viewBox="0 0 14" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M9.5 2L12 4.5L5 11.5L2 12L2.5 9L9.5 2Z"/>
         </svg>
         Rename
@@ -644,7 +672,7 @@
       <div class="context-menu-divider"></div>
       <button
         class="context-menu-item danger"
-        on:click={() => { handleCloseTab(contextMenuTab.id); tabContextMenu = null; }}
+        on:click={() => { requestCloseTab(contextMenuTab.id); tabContextMenu = null; }}
         role="menuitem"
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
@@ -713,7 +741,7 @@
   }
 
   .modern-tab {
-    @apply relative px-5 py-2 rounded-lg;
+    @apply relative px-8 py-2 rounded-lg;
     @apply bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800;
     @apply transition-all duration-200;
     border: 1px solid transparent;
