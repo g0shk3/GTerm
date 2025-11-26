@@ -163,6 +163,9 @@ export function closePane(tabId, paneId) {
     tab.type = mainPane.type;
     tab.connected = mainPane.connected;
 
+    // Dispatch a resize event to ensure the remaining panes are resized
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
+
     return t;
   });
 }
