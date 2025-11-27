@@ -837,7 +837,8 @@
   }
 
   .tab-content.hidden {
-    display: none;
+    visibility: hidden;
+    pointer-events: none;
   }
 
   /* Welcome Screen */

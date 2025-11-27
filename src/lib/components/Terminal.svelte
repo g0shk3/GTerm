@@ -25,7 +25,6 @@
   let connecting = true;
   let errorMessage = '';
   let showSearch = false;
-  let isSwitchingTab = false;
   let executingSnippet = false;
 
   const activePaneId = derived(tabs, $tabs => {
@@ -381,11 +380,6 @@
           }
         } catch (error) {
           console.error('Failed to fit terminal:', error);
-        } finally {
-          // If we were switching tabs, make the terminal visible again after fitting.
-          if (isSwitchingTab) {
-            isSwitchingTab = false;
-          }
         }
       });
     }
@@ -406,8 +400,6 @@
   function handleTabSwitched() {
     // Refocus and resize terminal when switching to this tab
     if (terminal && $activeTabId === tabId) {
-      // Hide terminal briefly to prevent flicker during resize
-      isSwitchingTab = true;
       // This ensures the terminal is resized correctly when it becomes visible,
       // as fitAddon cannot work on hidden elements.
       // Wait for the element to become visible before fitting
@@ -489,7 +481,7 @@
     </div>
   {/if}
 
-  <div class="terminal-container" bind:this={terminalElement} style:visibility={isSwitchingTab ? 'hidden' : 'visible'}></div>
+  <div class="terminal-container" bind:this={terminalElement}></div>
 </div>
 
 <style>
