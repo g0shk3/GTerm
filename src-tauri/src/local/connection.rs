@@ -117,10 +117,12 @@ impl LocalConnection {
             }
         });
 
-        // Reader task
+        // Reader task with adaptive sleep to reduce idle wake ups
         let app_handle_clone = app_handle.clone();
         tokio::task::spawn_blocking(move || {
             let mut buffer = [0u8; 8192];
+            let mut idle_count = 0u32;
+
             loop {
                 if *shutdown_rx_clone.borrow() {
                     break;
@@ -134,9 +136,19 @@ impl LocalConnection {
                     Ok(n) => {
                         let data = String::from_utf8_lossy(&buffer[..n]).to_string();
                         let _ = app_handle_clone.emit(&format!("terminal-output:{}", session_id_clone), data);
+                        idle_count = 0; // Reset on activity
                     },
                     Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                        std::thread::sleep(std::time::Duration::from_micros(50));
+                        // Adaptive sleep: fast when active, slower when idle
+                        idle_count += 1;
+                        let sleep_duration = if idle_count < 10 {
+                            std::time::Duration::from_micros(100)  // Active: 10k checks/sec
+                        } else if idle_count < 100 {
+                            std::time::Duration::from_millis(1)    // Idle: 1k checks/sec
+                        } else {
+                            std::time::Duration::from_millis(5)    // Very idle: 200 checks/sec
+                        };
+                        std::thread::sleep(sleep_duration);
                         continue;
                     },
                     Err(_e) => {

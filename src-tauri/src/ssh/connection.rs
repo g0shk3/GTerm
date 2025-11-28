@@ -89,7 +89,7 @@ impl SshConnection {
         let (input_tx, mut input_rx) = mpsc::unbounded_channel::<Vec<u8>>();
         *self.input_tx.lock().await = Some(input_tx);
 
-        // Start UNIFIED I/O task that handles both reading and writing
+        // Start UNIFIED I/O task with adaptive sleep to reduce idle wake ups
         // This prevents lock contention and SSH protocol corruption
         let session_id = self.session_id.clone();
         let channel_arc = Arc::clone(&self.channel);
@@ -98,12 +98,15 @@ impl SshConnection {
             let mut read_buffer = [0u8; 8192];
             let mut write_buffer: Option<Vec<u8>> = None;
             let mut write_pos = 0;
+            let mut idle_count = 0u32;
 
             loop {
                 // Check for shutdown
                 if *shutdown_rx.borrow() {
                     break;
                 }
+
+                let mut had_activity = false;
 
                 // Get channel lock once for this iteration
                 let mut channel_guard = match channel_arc.try_lock() {
@@ -121,6 +124,7 @@ impl SshConnection {
                             match channel.write(&data[write_pos..]) {
                                 Ok(n) => {
                                     write_pos += n;
+                                    had_activity = true;
                                     if write_pos >= data.len() {
                                         // Finished writing this buffer
                                         write_buffer = None;
@@ -143,6 +147,7 @@ impl SshConnection {
                         if let Ok(data) = input_rx.try_recv() {
                             write_buffer = Some(data);
                             write_pos = 0;
+                            had_activity = true;
                         }
                     }
 
@@ -157,6 +162,7 @@ impl SshConnection {
                             // Successfully read data
                             let data = String::from_utf8_lossy(&read_buffer[..n]).to_string();
                             let _ = app_handle.emit(&format!("ssh-output:{}", session_id), data);
+                            had_activity = true;
                         }
                         Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
                             // No data available
@@ -173,10 +179,21 @@ impl SshConnection {
                 // Release lock
                 drop(channel_guard);
 
-                // A small sleep is still necessary to prevent the busy-wait loop from
-                // consuming 100% CPU when there is no I/O activity.
-                // We reduce it significantly from 1ms to 50 microseconds.
-                std::thread::sleep(std::time::Duration::from_micros(50));
+                // Adaptive sleep: fast when active, slower when idle
+                if had_activity {
+                    idle_count = 0;
+                } else {
+                    idle_count += 1;
+                }
+
+                let sleep_duration = if idle_count < 10 {
+                    std::time::Duration::from_micros(100)  // Active: 10k checks/sec
+                } else if idle_count < 100 {
+                    std::time::Duration::from_millis(1)    // Idle: 1k checks/sec
+                } else {
+                    std::time::Duration::from_millis(5)    // Very idle: 200 checks/sec
+                };
+                std::thread::sleep(sleep_duration);
             }
         });
 
