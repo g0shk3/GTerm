@@ -231,7 +231,7 @@ export const shortcuts = createShortcutsStore();
 // Load shortcuts from store
 export async function loadShortcuts() {
   try {
-    const store = new Store('settings.json');
+    const store = await Store.load('settings.json');
     const saved = await store.get('shortcuts');
     if (saved && Array.isArray(saved)) {
       shortcuts.set(saved);
@@ -244,7 +244,7 @@ export async function loadShortcuts() {
 // Save shortcuts to store
 export async function saveShortcuts(shortcutsData) {
   try {
-    const store = new Store('settings.json');
+    const store = await Store.load('settings.json');
     await store.set('shortcuts', shortcutsData);
     await store.save();
     shortcuts.set(shortcutsData);
@@ -256,7 +256,7 @@ export async function saveShortcuts(shortcutsData) {
 // Reset shortcuts to defaults
 export async function resetShortcuts() {
   try {
-    const store = new Store('settings.json');
+    const store = await Store.load('settings.json');
     await store.set('shortcuts', defaultShortcuts);
     await store.save();
     shortcuts.reset();

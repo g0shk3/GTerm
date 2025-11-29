@@ -19,13 +19,24 @@
   let terminal;
   let fitAddon;
   let searchAddon;
-  let unlistenOutput;
-  let unlistenClosed;
-  let unlistenError;
+  let webLinksAddon;
+  const unlistenPromises = [];
   let connecting = true;
   let errorMessage = '';
   let showSearch = false;
   let executingSnippet = false;
+  let isDestroyed = false;
+
+  let animationFrameId = null;
+  let outputBuffer = '';
+
+  function writeBuffered() {
+    if (outputBuffer.length > 0 && terminal) {
+      terminal.write(outputBuffer);
+      outputBuffer = '';
+    }
+    animationFrameId = null;
+  }
 
   const activePaneId = derived(tabs, $tabs => {
     const currentTab = $tabs.find(t => t.id === tabId);
@@ -93,8 +104,9 @@
 
     fitAddon = new FitAddon();
     searchAddon = new SearchAddon();
+    webLinksAddon = new WebLinksAddon();
     terminal.loadAddon(fitAddon);
-    terminal.loadAddon(new WebLinksAddon());
+    terminal.loadAddon(webLinksAddon);
     terminal.loadAddon(searchAddon);
 
     terminal.open(terminalElement);
@@ -142,6 +154,7 @@
 
     // Handle user input
     terminal.onData(async (data) => {
+      if (isDestroyed) return;
       // Block user input while executing snippet to prevent race condition
       if (executingSnippet) {
         return;
@@ -161,6 +174,7 @@
 
     // Handle terminal resize
     terminal.onResize(async ({ cols, rows }) => {
+      if (isDestroyed) return;
       try {
         const connectionType = pane.host?.type || 'ssh';
         const command = connectionType === 'local' ? 'local_resize' : 'ssh_resize';
@@ -179,35 +193,24 @@
     const eventPrefix = connectionType === 'local' ? 'terminal' : 'ssh';
 
     // Listen for terminal output
-    let outputBuffer = '';
-    let animationFrameId = null;
-
-    function writeBuffered() {
-      if (outputBuffer.length > 0 && terminal) {
-        terminal.write(outputBuffer);
-        outputBuffer = '';
-      }
-      animationFrameId = null;
-    }
-
-    unlistenOutput = await listen(`${eventPrefix}-output:${pane.sessionId}`, (event) => {
+    unlistenPromises.push(listen(`${eventPrefix}-output:${pane.sessionId}`, (event) => {
       outputBuffer += event.payload;
       if (!animationFrameId) {
         animationFrameId = requestAnimationFrame(writeBuffered);
       }
-    });
+    }));
 
     // Listen for connection closed
-    unlistenClosed = await listen(`${eventPrefix}-closed:${pane.sessionId}`, () => {
+    unlistenPromises.push(listen(`${eventPrefix}-closed:${pane.sessionId}`, () => {
       terminal.write('\r\n\x1b[31mConnection closed\x1b[0m\r\n');
       updatePaneConnection(tabId, pane.id, false);
-    });
+    }));
 
     // Listen for errors
-    unlistenError = await listen(`${eventPrefix}-error:${pane.sessionId}`, (event) => {
+    unlistenPromises.push(listen(`${eventPrefix}-error:${pane.sessionId}`, (event) => {
       terminal.write(`\r\n\x1b[31mError: ${event.payload}\x1b[0m\r\n`);
       updatePaneConnection(tabId, pane.id, false);
-    });
+    }));
 
     // Window resize handler
     window.addEventListener('resize', handleResize);
@@ -227,6 +230,7 @@
   });
 
   async function connectSSH() {
+    if (isDestroyed) return;
     try {
       connecting = true;
       errorMessage = '';
@@ -245,6 +249,7 @@
 
       // Fit terminal after connection
       setTimeout(async () => {
+        if (isDestroyed) return;
         // Only fit if terminal is visible
         if (isTerminalVisible()) {
           // First fit the terminal to the container
@@ -286,6 +291,7 @@
   }
 
   async function connectLocal() {
+    if (isDestroyed) return;
     try {
       connecting = true;
       errorMessage = '';
@@ -301,6 +307,7 @@
 
       // Fit terminal after connection
       setTimeout(async () => {
+        if (isDestroyed) return;
         // Only fit if terminal is visible
         if (isTerminalVisible()) {
           // First fit the terminal to the container
@@ -342,6 +349,7 @@
   }
 
   async function executeSnippet(snippetId) {
+    if (isDestroyed) return;
     try {
       // Set flag to block user input during snippet execution
       executingSnippet = true;
@@ -412,6 +420,7 @@
   }
 
   onDestroy(async () => {
+    isDestroyed = true;
     window.removeEventListener('resize', handleResize);
     window.removeEventListener('clearTerminal', handleClearTerminal);
     window.removeEventListener('tabSwitched', handleTabSwitched);
@@ -422,9 +431,15 @@
     // Final flush of the buffer
     writeBuffered();
 
-    if (unlistenOutput) await unlistenOutput();
-    if (unlistenClosed) await unlistenClosed();
-    if (unlistenError) await unlistenError();
+    // This is the fix: wait for the listen promises to resolve
+    // and then call the returned unlisten functions.
+    Promise.all(unlistenPromises).then((unlisteners) => {
+      unlisteners.forEach((unlisten) => {
+        if (unlisten) {
+          unlisten();
+        }
+      });
+    });
 
     try {
       const connectionType = pane.host?.type || 'ssh';
@@ -432,6 +447,17 @@
       await invoke(command, { sessionId: pane.sessionId });
     } catch (error) {
       console.error('Failed to disconnect:', error);
+    }
+
+    // Dispose addons before the terminal itself
+    if (fitAddon) {
+      fitAddon.dispose();
+    }
+    if (searchAddon) {
+      searchAddon.dispose();
+    }
+    if (webLinksAddon) {
+      webLinksAddon.dispose();
     }
 
     if (terminal) {
