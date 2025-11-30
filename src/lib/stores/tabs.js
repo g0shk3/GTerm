@@ -143,12 +143,17 @@ export function closePane(tabId, paneId) {
     const tab = t.find(tab => tab.id === tabId);
     if (!tab || tab.panes.length <= 1) return t;
 
+    // Find the index of the pane being closed BEFORE it's removed
+    const closingPaneIndex = tab.panes.findIndex(p => p.id === paneId);
+
     // Remove the pane
     tab.panes = tab.panes.filter(p => p.id !== paneId);
 
     // If we closed the active pane, switch to another
     if (tab.activePaneId === paneId) {
-      tab.activePaneId = tab.panes[0].id;
+      // Determine the new index. Try to select the previous pane.
+      const newIndex = Math.max(0, closingPaneIndex - 1);
+      tab.activePaneId = tab.panes[newIndex].id;
     }
 
     // If only one pane left, reset layout
