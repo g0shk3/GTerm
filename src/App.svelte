@@ -527,6 +527,17 @@
             </div>
           </button>
         {/each}
+
+        <!-- Add New Tab Button -->
+        <button
+          class="new-tab-btn"
+          on:click={() => showHostSelector = true}
+          title="New Connection (Cmd+E)"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 3a.5.5 0 01.5.5v4h4a.5.5 0 010 1h-4v4a.5.5 0 01-1 0v-4h-4a.5.5 0 010-1h4v-4A.5.5 0 018 3z"/>
+          </svg>
+        </button>
       </div>
       <!-- Draggable spacer for window dragging -->
       <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -738,6 +749,13 @@
 
   .modern-tabs::-webkit-scrollbar {
     display: none;
+  }
+
+  .new-tab-btn {
+    @apply flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg;
+    @apply bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800;
+    @apply text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200;
+    @apply transition-all duration-200;
   }
 
   .modern-tab {
