@@ -281,7 +281,7 @@
 
 <style>
   .sidebar {
-    @apply bg-gray-50 dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700;
+    @apply bg-[#1f2937] border-l border-gray-700;
     width: 280px;
     flex-shrink: 0;
     transition: width 0.3s ease;
@@ -296,17 +296,17 @@
   }
 
   .sidebar-header {
-    @apply flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700;
+    @apply flex items-center gap-3 px-4 py-3 border-b border-gray-700;
     flex-shrink: 0;
   }
 
   .sidebar-title {
-    @apply text-sm font-semibold text-gray-700 dark:text-gray-300 flex-1;
+    @apply text-sm font-semibold text-gray-300 flex-1;
     white-space: nowrap;
   }
 
   .toggle-btn {
-    @apply p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400;
+    @apply p-1.5 rounded-md hover:bg-gray-700 transition-colors text-gray-400;
     font-size: 18px;
     line-height: 1;
     flex-shrink: 0;
@@ -317,20 +317,20 @@
   }
 
   .icon-btn {
-    @apply p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors;
-    @apply text-gray-600 dark:text-gray-400;
+    @apply p-2 rounded-md hover:bg-gray-700 transition-colors;
+    @apply text-gray-400;
   }
 
   .icon-btn.active {
-    @apply bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400;
+    @apply bg-blue-900/30 text-blue-400;
   }
 
   .icon-btn:hover {
-    @apply text-gray-700 dark:text-gray-300;
+    @apply text-gray-300;
   }
 
   .icon-btn.active:hover {
-    @apply text-blue-700 dark:text-blue-300;
+    @apply text-blue-300;
   }
 
   .sidebar-content {
@@ -353,12 +353,12 @@
   }
 
   .version-info {
-    @apply text-center text-xs text-gray-400 dark:text-gray-500 py-2;
+    @apply text-center text-xs text-gray-500 py-2;
     flex-shrink: 0;
   }
 
   .empty-state {
-    @apply text-center py-8 text-gray-500 dark:text-gray-400;
+    @apply text-center py-8 text-gray-400;
   }
 
   .empty-state p {
@@ -366,25 +366,24 @@
   }
 
   .empty-state .hint {
-    @apply text-xs mt-2 text-gray-400 dark:text-gray-500;
+    @apply text-xs mt-2 text-gray-500;
   }
 
   .host-card {
-    @apply w-full flex items-center gap-4 pl-3 pr-3 py-3 rounded-lg bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700;
-    @apply hover:border-blue-400 dark:hover:border-blue-400 hover:shadow-md transition-all cursor-pointer text-left;
+    @apply w-full flex items-center gap-4 pl-3 pr-3 py-3 rounded-lg bg-gray-900/50 border border-gray-700/50;
+    @apply hover:border-blue-500 hover:bg-gray-900 transition-all cursor-pointer text-left;
   }
 
   .host-card.selected {
-    @apply border-blue-500 dark:border-blue-500 bg-blue-50 dark:bg-blue-950/20 shadow-lg;
-    @apply border-2;
+    @apply border-blue-500 bg-gray-900 shadow-md;
   }
 
   .host-card.selected .host-icon {
-    @apply bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400;
+    @apply bg-blue-900 text-blue-400;
   }
 
   .host-icon {
-    @apply flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400;
+    @apply flex items-center justify-center w-10 h-10 rounded-lg bg-blue-900 text-blue-400;
     flex-shrink: 0;
   }
 
@@ -393,11 +392,11 @@
   }
 
   .host-name {
-    @apply text-sm font-medium text-gray-900 dark:text-gray-100 truncate;
+    @apply text-sm font-medium text-gray-100 truncate;
   }
 
   .host-details {
-    @apply text-xs text-gray-500 dark:text-gray-400 truncate;
+    @apply text-xs text-gray-400 truncate;
   }
 
   /* Custom scrollbar */
@@ -410,31 +409,31 @@
   }
 
   .sidebar-content::-webkit-scrollbar-thumb {
-    @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+    @apply bg-gray-600 rounded-full;
   }
 
   .sidebar-content::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-400 dark:bg-gray-500;
+    @apply bg-gray-500;
   }
 
   /* Context Menu */
   .context-menu {
-    @apply fixed bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-[60];
+    @apply fixed bg-gray-800 rounded-lg shadow-xl border border-gray-700 z-[60];
     @apply py-1 min-w-[180px];
   }
 
   .context-menu-item {
     @apply w-full px-3 py-2 text-left text-sm flex items-center gap-2;
-    @apply text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700;
+    @apply text-gray-300 hover:bg-gray-700;
     @apply transition-colors border-0 bg-transparent cursor-pointer;
   }
 
   .context-menu-item.danger {
-    @apply text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30;
+    @apply text-red-400 hover:bg-red-900/30;
   }
 
   .context-menu-divider {
-    @apply h-px bg-gray-200 dark:bg-gray-700 my-1;
+    @apply h-px bg-gray-700 my-1;
   }
 
   :global([dnd-zone]) {

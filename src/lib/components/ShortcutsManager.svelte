@@ -130,7 +130,7 @@
   >
     <div class="modal-header">
       <h2>Keyboard Shortcuts</h2>
-      <button class="close-btn" on:click={close}>
+      <button class="close-btn" on:click={close} aria-label="Close shortcuts manager">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M5 5l10 10M15 5l-10 10"/>
         </svg>
@@ -171,12 +171,12 @@
                         {/if}
                       </button>
                       <div class="editor-actions">
-                        <button class="save-btn" on:click={saveEditing} disabled={!tempKey}>
+                        <button class="save-btn" on:click={saveEditing} disabled={!tempKey} aria-label="Save shortcut">
                           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M2 7l3 3 7-7"/>
                           </svg>
                         </button>
-                        <button class="cancel-btn" on:click={cancelEditing}>
+                        <button class="cancel-btn" on:click={cancelEditing} aria-label="Cancel editing">
                           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M2 2l10 10M12 2L2 12"/>
                           </svg>
@@ -188,7 +188,7 @@
                       <div class="shortcut-keys">
                         {getShortcutDisplay(shortcut)}
                       </div>
-                      <button class="edit-btn" on:click={() => startEditing(shortcut)}>
+                      <button class="edit-btn" on:click={() => startEditing(shortcut)} aria-label="Edit shortcut">
                         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
                           <path d="M9.5 2L12 4.5L5 11.5L2 12L2.5 9L9.5 2Z"/>
                         </svg>
@@ -212,7 +212,8 @@
   }
 
   .shortcuts-modal {
-    @apply bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700;
+    background-color: #1f2937;
+    @apply rounded-xl shadow-2xl border border-gray-700;
     width: 90%;
     max-width: 800px;
     max-height: 85vh;
@@ -221,15 +222,15 @@
   }
 
   .modal-header {
-    @apply flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700;
+    @apply flex items-center justify-between px-6 py-4 border-b border-gray-700;
   }
 
   .modal-header h2 {
-    @apply text-xl font-semibold text-gray-900 dark:text-gray-100;
+    @apply text-xl font-semibold text-gray-100;
   }
 
   .close-btn {
-    @apply p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 transition-colors;
+    @apply p-2 rounded-lg hover:bg-gray-700 text-gray-400 transition-colors;
   }
 
   .shortcuts-content {
@@ -254,8 +255,8 @@
 
   .shortcut-item {
     @apply flex items-center justify-between px-4 py-3 rounded-lg;
-    @apply bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700;
-    @apply hover:border-blue-400 dark:hover:border-blue-500 transition-colors;
+    @apply bg-gray-800 border border-gray-700;
+    @apply hover:border-blue-500 transition-colors;
   }
 
   .shortcut-info {
@@ -263,11 +264,11 @@
   }
 
   .shortcut-name {
-    @apply text-sm font-medium text-gray-900 dark:text-gray-100;
+    @apply text-sm font-medium text-gray-100;
   }
 
   .shortcut-description {
-    @apply text-xs text-gray-500 dark:text-gray-400 mt-0.5;
+    @apply text-xs text-gray-400 mt-0.5;
   }
 
   .shortcut-actions {
@@ -275,13 +276,13 @@
   }
 
   .shortcut-keys {
-    @apply px-3 py-1.5 rounded-md bg-gray-100 dark:bg-gray-700;
-    @apply text-sm font-mono font-semibold text-gray-700 dark:text-gray-300;
+    @apply px-3 py-1.5 rounded-md bg-gray-700;
+    @apply text-sm font-mono font-semibold text-gray-300;
   }
 
   .edit-btn {
-    @apply p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600;
-    @apply text-gray-600 dark:text-gray-400 transition-colors;
+    @apply p-2 rounded-md hover:bg-gray-600;
+    @apply text-gray-400 transition-colors;
   }
 
   .shortcut-editor {
@@ -295,12 +296,12 @@
   }
 
   .record-btn:not(.recording) {
-    @apply border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800;
-    @apply text-gray-600 dark:text-gray-400 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950;
+    @apply border-gray-600 bg-gray-800;
+    @apply text-gray-400 hover:border-blue-400 hover:bg-blue-950;
   }
 
   .record-btn.recording {
-    @apply border-blue-500 bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400;
+    @apply border-blue-500 bg-blue-950 text-blue-400;
     animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 

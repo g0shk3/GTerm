@@ -465,7 +465,7 @@
 <div class="app-container">
   <!-- Modern Header -->
   <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-  <header class="modern-header" data-tauri-drag-region on:dblclick={handleHeaderDoubleClick}>
+  <header class="modern-header" role="banner" data-tauri-drag-region on:dblclick={handleHeaderDoubleClick}>
     <!-- svelte-ignore a11y-click-events-have-key-events -->
     <!-- svelte-ignore a11y-no-static-element-interactions -->
     <div class="header-center" on:dblclick={handleHeaderDoubleClick}>
@@ -477,12 +477,17 @@
         on:finalize={handleTabsDndFinalize}
       >
         {#each tabsDisplayOrder as tab (tab.id)}
-          <button
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
+          <div
             class="modern-tab"
             class:active={tab.id === $activeTabId}
             class:editing={editingTabId === tab.id}
             on:click={() => switchTab(tab.id)}
             on:contextmenu={(e) => handleTabContextMenu(e, tab)}
+            on:keydown={(e) => e.key === 'Enter' && switchTab(tab.id)}
+            role="tab"
+            tabindex="0"
+            aria-selected={tab.id === $activeTabId}
           >
             <div class="tab-content-wrapper">
               <!-- Drag handle for tab reordering -->
@@ -500,7 +505,7 @@
                 class="tab-indicator"
                 class:connected={tab.connected}
                 class:disconnected={!tab.connected}
-              />
+              ></span>
               {#if editingTabId === tab.id}
                 <input
                   type="text"
@@ -518,6 +523,7 @@
                   class="tab-close-btn"
                   on:click|stopPropagation={() => requestCloseTab(tab.id)}
                   title="Close"
+                  aria-label="Close tab"
                 >
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M3 3l8 8M11 3l-8 8" />
@@ -525,7 +531,7 @@
                 </button>
               {/if}
             </div>
-          </button>
+          </div>
         {/each}
 
         <!-- Add New Tab Button -->
@@ -760,7 +766,7 @@
 
   .modern-tab {
     @apply relative px-8 py-2 rounded-lg;
-    @apply bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800;
+    @apply bg-transparent hover:bg-gray-700/30;
     @apply transition-all duration-200;
     border: 1px solid transparent;
     min-width: max-content;
@@ -768,8 +774,8 @@
   }
 
   .modern-tab.active {
-    @apply bg-white dark:bg-gray-800;
-    @apply border-gray-200 dark:border-gray-700;
+    background-color: #1f2937;
+    @apply border-gray-700;
     @apply shadow-sm;
   }
 
@@ -809,11 +815,11 @@
   }
 
   .tab-label {
-    @apply text-sm font-medium text-gray-700 dark:text-gray-300;
+    @apply text-sm font-medium text-gray-400;
   }
 
   .modern-tab.active .tab-label {
-    @apply text-gray-900 dark:text-white;
+    @apply text-white;
   }
 
   .tab-rename-input {
@@ -882,18 +888,17 @@
 
   .welcome-icon {
     @apply inline-flex items-center justify-center w-20 h-20 mb-6;
-    @apply rounded-2xl bg-blue-100 dark:bg-blue-900/30;
-    @apply text-blue-600 dark:text-blue-500;
+    @apply rounded-2xl bg-blue-900/30;
+    @apply text-blue-500;
   }
 
   .welcome-title {
     @apply text-4xl font-bold mb-3;
-    @apply bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400;
-    @apply bg-clip-text text-transparent;
+    @apply text-gray-200;
   }
 
   .welcome-subtitle {
-    @apply text-lg text-gray-600 dark:text-gray-400 mb-8;
+    @apply text-lg text-gray-400 mb-8;
   }
 
   .welcome-buttons {
@@ -916,21 +921,21 @@
 
   /* Context Menu */
   .context-menu {
-    @apply fixed bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-[60];
+    @apply fixed bg-gray-800 rounded-lg shadow-xl border border-gray-700 z-[60];
     @apply py-1 min-w-[160px];
   }
 
   .context-menu-item {
     @apply w-full px-3 py-2 text-left text-sm flex items-center gap-2;
-    @apply text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700;
+    @apply text-gray-300 hover:bg-gray-700;
     @apply transition-colors border-0 bg-transparent cursor-pointer;
   }
 
   .context-menu-item.danger {
-    @apply text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30;
+    @apply text-red-400 hover:bg-red-900/30;
   }
 
   .context-menu-divider {
-    @apply h-px bg-gray-200 dark:bg-gray-700 my-1;
+    @apply h-px bg-gray-700 my-1;
   }
 </style>

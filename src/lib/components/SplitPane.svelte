@@ -75,19 +75,19 @@
   }
 
   .split-container.vertical .split-pane:not(:last-child) {
-    @apply border-r-2 border-gray-300 dark:border-gray-700;
+    @apply border-r-2 border-gray-700;
   }
 
   .split-container.horizontal .split-pane:not(:last-child) {
-    @apply border-b-2 border-gray-300 dark:border-gray-700;
+    @apply border-b-2 border-gray-700;
   }
 
   .pane-close-btn {
     @apply absolute top-2 right-2 z-10;
-    @apply p-1.5 rounded opacity-0 hover:bg-red-100 dark:hover:bg-red-900/30;
-    @apply text-gray-400 hover:text-red-600 dark:hover:text-red-400;
+    @apply p-1.5 rounded opacity-0 hover:bg-red-900/30;
+    @apply text-gray-400 hover:text-red-400;
     @apply transition-all duration-200;
-    @apply bg-white/90 dark:bg-gray-900/90 backdrop-blur;
+    @apply bg-gray-900/90 backdrop-blur;
   }
 
   .split-pane:hover .pane-close-btn,

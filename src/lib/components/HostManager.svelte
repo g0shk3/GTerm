@@ -539,7 +539,7 @@
               required
               autocapitalize="off"
               spellcheck="false"
-            />
+            ></textarea>
           </div>
 
           <div class="form-actions">
@@ -602,12 +602,13 @@
   }
 
   .modal-content {
-    @apply bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-hidden flex flex-col;
+    background-color: #1f2937;
+    @apply rounded-xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-hidden flex flex-col;
     margin: 20px;
   }
 
   .modal-header {
-    @apply flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 gap-4;
+    @apply flex items-center justify-between px-6 py-4 border-b border-gray-700 gap-4;
   }
 
   .close-btn {
@@ -631,15 +632,15 @@
   }
 
   label {
-    @apply block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300;
+    @apply block text-sm font-medium mb-1 text-gray-300;
   }
 
   input, select {
-    @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100;
+    @apply w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-gray-100;
   }
 
   .form-actions {
-    @apply flex gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700;
+    @apply flex gap-3 mt-6 pt-4 border-t border-gray-700;
   }
 
   .btn-primary {
@@ -647,7 +648,7 @@
   }
 
   .btn-secondary {
-    @apply px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-gray-100 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors font-medium;
+    @apply px-4 py-2 bg-gray-700 text-gray-100 rounded-md hover:bg-gray-600 transition-colors font-medium;
   }
 
   .btn-sm {
@@ -664,21 +665,21 @@
   }
 
   .header-tab {
-    @apply px-3 py-2 font-medium text-gray-700 dark:text-gray-300;
+    @apply px-3 py-2 font-medium text-gray-400;
     @apply border-b-2 border-transparent;
-    @apply hover:text-gray-900 dark:hover:text-white;
+    @apply hover:text-white;
     @apply transition-colors cursor-pointer;
   }
 
   .header-tab.active {
-    @apply text-blue-600 dark:text-blue-400;
-    @apply border-blue-600 dark:border-blue-400;
+    @apply text-blue-400;
+    @apply border-blue-400;
   }
 
 
   /* Textarea */
   textarea {
-    @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-mono text-sm;
+    @apply w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-gray-100 font-mono text-sm;
   }
 
   /* Snippets List Section */
@@ -691,8 +692,8 @@
   }
 
   .snippet-item {
-    @apply flex items-start justify-between gap-4 p-3 rounded-lg border border-gray-200 dark:border-gray-700;
-    @apply bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors;
+    @apply flex items-start justify-between gap-4 p-3 rounded-lg border border-gray-700;
+    @apply bg-gray-800 hover:bg-gray-700 transition-colors;
   }
 
   .snippet-info {
@@ -700,11 +701,11 @@
   }
 
   .snippet-name {
-    @apply text-sm font-semibold text-gray-900 dark:text-white truncate;
+    @apply text-sm font-semibold text-white truncate;
   }
 
   .snippet-preview {
-    @apply text-xs text-gray-600 dark:text-gray-400 mt-1 truncate;
+    @apply text-xs text-gray-400 mt-1 truncate;
   }
 
   .snippet-actions {

@@ -196,7 +196,7 @@
           autocomplete="off"
         />
         {#if searchQuery}
-          <button class="clear-btn" on:click={() => searchQuery = ''}>
+          <button class="clear-btn" on:click={() => searchQuery = ''} aria-label="Clear search">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M3 3l8 8M11 3l-8 8" />
             </svg>
@@ -345,35 +345,36 @@
   }
 
   .host-selector {
-    @apply bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-96;
+    background-color: #1f2937;
+    @apply rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-96;
     border: 1px solid rgba(59, 130, 246, 0.2);
   }
 
   /* Search Container */
   .search-container {
-    @apply p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0;
+    @apply p-4 border-b border-gray-700 flex-shrink-0;
   }
 
   .search-input-wrapper {
     @apply flex items-center gap-2 px-3 py-2 rounded-lg;
-    @apply bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600;
-    @apply focus-within:border-blue-500 dark:focus-within:border-blue-400 transition-colors;
+    @apply bg-gray-700 border border-gray-600;
+    @apply focus-within:border-blue-400 transition-colors;
   }
 
   .search-icon {
-    @apply text-gray-400 dark:text-gray-500 flex-shrink-0;
+    @apply text-gray-500 flex-shrink-0;
   }
 
   .search-input {
-    @apply flex-1 bg-transparent outline-none text-gray-900 dark:text-white text-sm;
+    @apply flex-1 bg-transparent outline-none text-white text-sm;
   }
 
   .search-input::placeholder {
-    @apply text-gray-500 dark:text-gray-400;
+    @apply text-gray-400;
   }
 
   .clear-btn {
-    @apply p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors flex-shrink-0;
+    @apply p-1 text-gray-400 hover:text-gray-300 transition-colors flex-shrink-0;
   }
 
   /* Hosts List */
@@ -382,18 +383,18 @@
   }
 
   .empty-state {
-    @apply flex items-center justify-center py-8 text-gray-500 dark:text-gray-400 text-sm text-center px-4;
+    @apply flex items-center justify-center py-8 text-gray-400 text-sm text-center px-4;
   }
 
   /* Host Items */
   .host-item-wrapper {
     @apply flex items-center py-2 transition-colors border-l-2 border-transparent;
-    @apply hover:bg-gray-100 dark:hover:bg-gray-700;
+    @apply hover:bg-gray-700;
   }
 
   .host-item {
     @apply flex items-center gap-4 flex-1 text-left bg-transparent border-0 pl-4 pr-3 py-0;
-    @apply text-gray-700 dark:text-gray-300 cursor-pointer;
+    @apply text-gray-300 cursor-pointer;
   }
 
   .host-actions {
@@ -410,22 +411,22 @@
   }
 
   .edit-btn {
-    @apply bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400;
-    @apply hover:bg-blue-200 dark:hover:bg-blue-800;
+    @apply bg-blue-900/50 text-blue-400;
+    @apply hover:bg-blue-800;
   }
 
   .duplicate-btn {
-    @apply bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400;
-    @apply hover:bg-green-200 dark:hover:bg-green-800;
+    @apply bg-green-900/50 text-green-400;
+    @apply hover:bg-green-800;
   }
 
   .delete-btn {
-    @apply bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400;
-    @apply hover:bg-red-200 dark:hover:bg-red-800;
+    @apply bg-red-900/50 text-red-400;
+    @apply hover:bg-red-800;
   }
 
   .host-icon {
-    @apply flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 flex-shrink-0;
+    @apply flex items-center justify-center w-10 h-10 rounded-lg bg-blue-900 text-blue-400 flex-shrink-0;
   }
 
   .host-info {
@@ -433,17 +434,17 @@
   }
 
   .host-name {
-    @apply text-sm font-medium text-gray-900 dark:text-gray-100 truncate;
+    @apply text-sm font-medium text-gray-100 truncate;
   }
 
   .host-details {
-    @apply text-xs text-gray-500 dark:text-gray-400 truncate;
+    @apply text-xs text-gray-400 truncate;
   }
 
   /* Footer */
   .footer {
-    @apply px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex-shrink-0;
-    @apply bg-gray-50 dark:bg-gray-900/50;
+    @apply px-4 py-3 border-t border-gray-700 flex-shrink-0;
+    @apply bg-gray-800;
   }
 
   /* Custom scrollbar */
@@ -456,31 +457,31 @@
   }
 
   .hosts-list::-webkit-scrollbar-thumb {
-    @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+    @apply bg-gray-600 rounded-full;
   }
 
   .hosts-list::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-400 dark:bg-gray-500;
+    @apply bg-gray-500;
   }
 
   /* Context Menu */
   .context-menu {
-    @apply fixed bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-[60];
+    @apply fixed bg-gray-800 rounded-lg shadow-xl border border-gray-700 z-[60];
     @apply py-1 min-w-[160px];
   }
 
   .context-menu-item {
     @apply w-full px-3 py-2 text-left text-sm flex items-center gap-2;
-    @apply text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700;
+    @apply text-gray-300 hover:bg-gray-700;
     @apply transition-colors border-0 bg-transparent cursor-pointer;
   }
 
   .context-menu-item.danger {
-    @apply text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30;
+    @apply text-red-400 hover:bg-red-900/30;
   }
 
   .context-menu-divider {
-    @apply h-px bg-gray-200 dark:bg-gray-700 my-1;
+    @apply h-px bg-gray-700 my-1;
   }
 
   :global([dnd-zone]) {
