@@ -27,17 +27,6 @@
   let executingSnippet = false;
   let isDestroyed = false;
 
-  let animationFrameId = null;
-  let outputBuffer = '';
-
-  function writeBuffered() {
-    if (outputBuffer.length > 0 && terminal) {
-      terminal.write(outputBuffer);
-      outputBuffer = '';
-    }
-    animationFrameId = null;
-  }
-
   const activePaneId = derived(tabs, $tabs => {
     const currentTab = $tabs.find(t => t.id === tabId);
     return currentTab ? currentTab.activePaneId : null;
@@ -194,9 +183,9 @@
 
     // Listen for terminal output
     unlistenPromises.push(listen(`${eventPrefix}-output:${pane.sessionId}`, (event) => {
-      outputBuffer += event.payload;
-      if (!animationFrameId) {
-        animationFrameId = requestAnimationFrame(writeBuffered);
+      // event.payload is number[]
+      if (terminal) {
+        terminal.write(new Uint8Array(event.payload));
       }
     }));
 
@@ -425,19 +414,16 @@
     window.removeEventListener('clearTerminal', handleClearTerminal);
     window.removeEventListener('tabSwitched', handleTabSwitched);
 
-    if (animationFrameId) {
-      cancelAnimationFrame(animationFrameId);
-    }
-    // Final flush of the buffer
-    writeBuffered();
-
     // This is the fix: wait for the listen promises to resolve
-    // and then call the returned unlisten functions.
-    Promise.all(unlistenPromises).then((unlisteners) => {
-      unlisteners.forEach((unlisten) => {
-        if (unlisten) {
-          unlisten();
+    // and then call the returned unlisten functions. This is more robust
+    // than Promise.all as it won't fail if one promise rejects.
+    unlistenPromises.forEach(p => {
+      p.then(unlistenFn => {
+        if (unlistenFn) {
+          unlistenFn();
         }
+      }).catch(err => {
+        console.error("A listener promise failed to resolve for cleanup:", err);
       });
     });
 

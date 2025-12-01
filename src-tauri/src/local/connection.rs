@@ -134,7 +134,7 @@ impl LocalConnection {
                         break;
                     },
                     Ok(n) => {
-                        let data = String::from_utf8_lossy(&buffer[..n]).to_string();
+                        let data = &buffer[..n];
                         let _ = app_handle_clone.emit(&format!("terminal-output:{}", session_id_clone), data);
                         idle_count = 0; // Reset on activity
                     },

@@ -160,7 +160,7 @@ impl SshConnection {
                         }
                         Ok(n) => {
                             // Successfully read data
-                            let data = String::from_utf8_lossy(&read_buffer[..n]).to_string();
+                            let data = &read_buffer[..n];
                             let _ = app_handle.emit(&format!("ssh-output:{}", session_id), data);
                             had_activity = true;
                         }
