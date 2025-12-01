@@ -26,6 +26,7 @@
   let showSearch = false;
   let executingSnippet = false;
   let isDestroyed = false;
+  let resizeAnimationFrameId = null;
 
   const activePaneId = derived(tabs, $tabs => {
     const currentTab = $tabs.find(t => t.id === tabId);
@@ -370,7 +371,10 @@
   function handleResize() {
     if (fitAddon && terminal && isTerminalVisible()) {
       // Use requestAnimationFrame to ensure DOM has been updated
-      requestAnimationFrame(() => {
+      if (resizeAnimationFrameId) {
+        cancelAnimationFrame(resizeAnimationFrameId);
+      }
+      resizeAnimationFrameId = requestAnimationFrame(() => {
         try {
           if (isTerminalVisible()) {
             fitAddon.fit();
@@ -410,6 +414,12 @@
 
   onDestroy(async () => {
     isDestroyed = true;
+
+    // Cancel any pending animation frames
+    if (resizeAnimationFrameId) {
+      cancelAnimationFrame(resizeAnimationFrameId);
+    }
+
     window.removeEventListener('resize', handleResize);
     window.removeEventListener('clearTerminal', handleClearTerminal);
     window.removeEventListener('tabSwitched', handleTabSwitched);
