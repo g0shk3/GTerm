@@ -592,12 +592,6 @@
                 </svg>
                 Local Terminal
               </button>
-              <button on:click={() => showHostManager = true} class="welcome-btn">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M10 4v12M4 10h12" />
-                </svg>
-                Connect to Server
-              </button>
             </div>
           </div>
         </div>
@@ -616,7 +610,6 @@
       bind:isOpen={sidebarOpen}
       on:connect={handleSidebarConnect}
       on:edit={handleSidebarEdit}
-      on:manage={() => { showHostManager = true; editingHost = null; }}
       on:settings={() => {
         createSettingsTab();
         currentView = 'tabs';
