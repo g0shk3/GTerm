@@ -34,6 +34,34 @@
       />
     </div>
   </div>
+
+  <div class="config-section">
+    <h3 class="section-title">Terminal</h3>
+    <div class="config-item">
+      <div class="config-item-info">
+        <span class="config-item-label">Scrollback lines</span>
+        <span class="config-item-description">Number of lines to keep in terminal history</span>
+      </div>
+       <input
+        type="number"
+        class="input-field"
+        min="1"
+        step="100"
+        bind:value={$settings.scrollback}
+        on:change={e => handleSettingChange('scrollback', parseInt(e.target.value, 10))}
+      />
+    </div>
+    <div class="config-item">
+      <div class="config-item-info">
+        <span class="config-item-label">Open new tabs next to active</span>
+        <span class="config-item-description">Open new tabs immediately after the current active tab</span>
+      </div>
+      <Switch
+        checked={$settings.openTabsNextToActive}
+        on:change={e => handleSettingChange('openTabsNextToActive', e.target.checked)}
+      />
+    </div>
+  </div>
 </div>
 
 <style>
@@ -68,5 +96,10 @@
 
   .config-item-description {
     @apply text-xs text-gray-400;
+  }
+
+  .input-field {
+      @apply w-28 bg-gray-800 border border-gray-600 rounded-md text-white text-sm p-2;
+      @apply focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
   }
 </style>

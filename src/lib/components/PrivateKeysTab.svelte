@@ -36,22 +36,6 @@
     }
   }
 
-  async function handleGenerateKey() {
-    try {
-      const homeDir = await invoke('get_home_dir');
-      const keyPath = `${homeDir}/.ssh/gterm_ed25519_${Date.now()}`;
-
-      const publicKey = await invoke('generate_keypair', { outputPath: keyPath });
-
-      privateKeyForm.path = keyPath;
-
-      await navigator.clipboard.writeText(publicKey);
-      alert('New ed25519 key generated successfully!\nPublic key has been copied to clipboard.');
-    } catch (error) {
-      alert('Error generating key: ' + error);
-    }
-  }
-
   async function handleSavePrivateKey() {
     if (!privateKeyForm.name || !privateKeyForm.path) {
       alert('Please fill in both private key name and path');
@@ -127,9 +111,6 @@
         />
         <button type="button" class="btn-sm btn-secondary" on:click={handleSelectKeyFile}>
           Browse
-        </button>
-        <button type="button" class="btn-sm btn-secondary" on:click={handleGenerateKey}>
-          Generate
         </button>
       </div>
     </div>
@@ -253,12 +234,12 @@
   }
 
   .edit-btn {
-    @apply bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300;
-    @apply hover:bg-blue-200 dark:hover:bg-blue-800;
+    @apply bg-gray-700 text-gray-400;
+    @apply hover:bg-blue-600 hover:text-white;
   }
 
   .delete-btn {
-    @apply bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300;
-    @apply hover:bg-red-200 dark:hover:bg-red-800;
+    @apply bg-gray-700 text-gray-400;
+    @apply hover:bg-red-600 hover:text-white;
   }
 </style>

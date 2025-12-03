@@ -556,9 +556,8 @@
         createSettingsTab();
         currentView = 'tabs';
       }} class="header-btn" title="Settings">
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-          <circle cx="9" cy="9" r="3"/>
-          <path d="M9 1v2M9 15v2M17 9h-2M3 9H1M15.5 2.5l-1.5 1.5M5 11l-1.5 1.5M15.5 15.5l-1.5-1.5M5 7L3.5 5.5"/>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.096 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
       <button on:click={() => {
@@ -738,7 +737,7 @@
 
   .header-btn {
     @apply flex items-center gap-2 px-3 py-2 rounded-lg;
-    @apply text-gray-700 dark:text-gray-300;
+    @apply text-gray-700;
     @apply hover:bg-gray-100 dark:hover:bg-gray-800;
     @apply transition-all duration-200;
     font-size: 14px;
@@ -761,7 +760,7 @@
   .new-tab-btn {
     @apply flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg;
     @apply bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800;
-    @apply text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200;
+    @apply text-gray-500 hover:text-gray-800;
     @apply transition-all duration-200;
   }
 
@@ -942,5 +941,15 @@
 
   .context-menu-divider {
     @apply h-px bg-gray-700 my-1;
+  }
+
+  :global(.dark) .header-btn,
+  :global(.dark) .new-tab-btn {
+    color: #e5e7eb; /* More vibrant: gray-200 */
+  }
+
+  :global(.dark) .header-btn:hover,
+  :global(.dark) .new-tab-btn:hover {
+      color: #ffffff; /* White */
   }
 </style>

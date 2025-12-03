@@ -199,12 +199,12 @@
   }
 
   .edit-btn {
-    @apply bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300;
-    @apply hover:bg-blue-200 dark:hover:bg-blue-800;
+    @apply bg-gray-700 text-gray-400;
+    @apply hover:bg-blue-600 hover:text-white;
   }
 
   .delete-btn {
-    @apply bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300;
-    @apply hover:bg-red-200 dark:hover:bg-red-800;
+    @apply bg-gray-700 text-gray-400;
+    @apply hover:bg-red-600 hover:text-white;
   }
 </style>

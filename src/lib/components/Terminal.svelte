@@ -57,7 +57,7 @@
       cursorBlink: true,
       fontSize: 14,
       fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-      scrollback: 10000, // Increase scrollback buffer to 10,000 lines
+      scrollback: $settings.scrollback,
       fastScrollModifier: 'shift',
       fastScrollSensitivity: 5,
       rows: 24, // Set initial rows

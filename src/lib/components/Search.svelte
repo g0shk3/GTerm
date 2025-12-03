@@ -10,10 +10,20 @@
 
   function handleSearch(direction) {
     if (!searchTerm) return;
+
+    const searchOptions = {
+      decorations: {
+        matchBackground: '#78716c', // stone-500
+        matchOverviewRuler: '#facc15', // yellow-400
+        activeMatchBackground: '#facc15', // yellow-400
+        activeMatchColorOverviewRuler: '#ffffff',
+      }
+    };
+
     if (direction === 'next') {
-      searchAddon.findNext(searchTerm);
+      searchAddon.findNext(searchTerm, searchOptions);
     } else {
-      searchAddon.findPrevious(searchTerm);
+      searchAddon.findPrevious(searchTerm, searchOptions);
     }
   }
 

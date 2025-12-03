@@ -1,12 +1,19 @@
 import { writable } from 'svelte/store';
 
 const storedSettings = localStorage.getItem('app_settings');
+
+// Define default settings, including the new scrollback option
 const defaultSettings = {
   autoStartLocalTerminal: false,
-  autoCopyOnSelect: false
+  autoCopyOnSelect: false,
+  scrollback: 10000, // Default value
+  openTabsNextToActive: false
 };
 
-const initialSettings = storedSettings ? JSON.parse(storedSettings) : defaultSettings;
+// Merge stored settings with defaults to ensure all keys are present
+const initialSettings = storedSettings
+  ? { ...defaultSettings, ...JSON.parse(storedSettings) }
+  : defaultSettings;
 
 export const settings = writable(initialSettings);
 

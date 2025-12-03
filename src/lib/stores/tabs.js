@@ -1,4 +1,5 @@
 import { writable, get } from 'svelte/store';
+import { settings } from './settings.js';
 
 export const tabs = writable([]);
 export const activeTabId = writable(null);
@@ -33,7 +34,22 @@ export function createTab(host) {
     connected: mainPane.connected,
   };
 
-  tabs.update(t => [...t, newTab]);
+  const openNextToActive = get(settings).openTabsNextToActive;
+  const currentActiveTabId = get(activeTabId);
+
+  tabs.update(t => {
+    if (openNextToActive && currentActiveTabId) {
+      const activeIndex = t.findIndex(tab => tab.id === currentActiveTabId);
+      if (activeIndex !== -1) {
+        const newTabs = [...t];
+        newTabs.splice(activeIndex + 1, 0, newTab);
+        return newTabs;
+      }
+    }
+    // Fallback to original behavior
+    return [...t, newTab];
+  });
+
   activeTabId.set(id);
 
   return newTab;
