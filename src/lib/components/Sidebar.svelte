@@ -143,12 +143,6 @@
         ←
       {/if}
     </button>
-    <button on:click={() => dispatch('settings')} class="icon-btn" title="Settings">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-        <circle cx="8" cy="8" r="3"/>
-        <path d="M8 1v2M8 13v2M15 8h-2M3 8H1M13.5 2.5l-1.5 1.5M4 10l-1.5 1.5M13.5 13.5l-1.5-1.5M4 6L2.5 4.5"/>
-      </svg>
-    </button>
     {#if isOpen}
       <h3 class="sidebar-title">Connections</h3>
     {/if}
@@ -291,15 +285,6 @@
     font-size: 18px;
     line-height: 1;
     flex-shrink: 0;
-  }
-
-  .icon-btn {
-    @apply p-2 rounded-md hover:bg-gray-700 transition-colors;
-    @apply text-gray-400;
-  }
-
-  .icon-btn:hover {
-    @apply text-gray-300;
   }
 
   .sidebar-content {

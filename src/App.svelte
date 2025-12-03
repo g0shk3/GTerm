@@ -553,6 +553,15 @@
 
     <div class="header-right" data-tauri-drag-region>
       <button on:click={() => {
+        createSettingsTab();
+        currentView = 'tabs';
+      }} class="header-btn" title="Settings">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="9" cy="9" r="3"/>
+          <path d="M9 1v2M9 15v2M17 9h-2M3 9H1M15.5 2.5l-1.5 1.5M5 11l-1.5 1.5M15.5 15.5l-1.5-1.5M5 7L3.5 5.5"/>
+        </svg>
+      </button>
+      <button on:click={() => {
         sidebarOpen = !sidebarOpen;
         // Trigger terminal resize after sidebar animation completes
         setTimeout(() => {
@@ -610,10 +619,6 @@
       bind:isOpen={sidebarOpen}
       on:connect={handleSidebarConnect}
       on:edit={handleSidebarEdit}
-      on:settings={() => {
-        createSettingsTab();
-        currentView = 'tabs';
-      }}
     />
   </div>
 
