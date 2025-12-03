@@ -5,7 +5,7 @@
   import { ask } from '@tauri-apps/plugin-dialog';
   import { relaunch } from '@tauri-apps/plugin-process';
   import { theme } from './lib/stores/theme';
-  import { tabs, activeTabId, createTab, closeTab, splitPane, renameTab, duplicateTab, reorderTabs, closePane } from './lib/stores/tabs';
+  import { tabs, activeTabId, createTab, closeTab, splitPane, renameTab, duplicateTab, reorderTabs, closePane, createSettingsTab } from './lib/stores/tabs';
   import { hostsStore, loadHosts } from './lib/stores/hosts';
   import { dndzone } from 'svelte-dnd-action';
   import { loadSnippets } from './lib/stores/snippets';
@@ -617,7 +617,10 @@
       on:connect={handleSidebarConnect}
       on:edit={handleSidebarEdit}
       on:manage={() => { showHostManager = true; editingHost = null; }}
-      on:shortcuts={() => { showShortcutsManager = true; }}
+      on:settings={() => {
+        createSettingsTab();
+        currentView = 'tabs';
+      }}
     />
   </div>
 

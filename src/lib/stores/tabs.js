@@ -39,6 +39,40 @@ export function createTab(host) {
   return newTab;
 }
 
+export function createSettingsTab() {
+  // Check if settings tab already exists
+  const currentTabs = get(tabs);
+  const existingSettingsTab = currentTabs.find(t => t.type === 'settings');
+
+  if (existingSettingsTab) {
+    // If it exists, just activate it
+    activeTabId.set(existingSettingsTab.id);
+    return existingSettingsTab;
+  }
+
+  // Create new settings tab
+  const id = `tab-${++tabCounter}`;
+
+  const newTab = {
+    id,
+    title: 'Settings',
+    type: 'settings',
+    splitLayout: 'none',
+    panes: [{
+      id: `pane-${++paneCounter}`,
+      type: 'settings',
+      connected: true
+    }],
+    activePaneId: `pane-${paneCounter}`,
+    connected: true,
+  };
+
+  tabs.update(t => [...t, newTab]);
+  activeTabId.set(id);
+
+  return newTab;
+}
+
 export function closeTab(id) {
   // Find the index of the tab we are closing, BEFORE it's removed.
   const allTabs = get(tabs);

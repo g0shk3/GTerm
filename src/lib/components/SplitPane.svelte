@@ -1,6 +1,7 @@
 <script>
   import Terminal from './Terminal.svelte';
   import SFTP from './SFTP.svelte';
+  import Settings from './Settings.svelte';
   import { setActivePane, closePane } from '../stores/tabs';
 
   export let tab;
@@ -39,8 +40,10 @@
         </button>
       {/if}
 
-      <!-- Render terminal or SFTP based on pane type -->
-      {#if pane.type === 'terminal'}
+      <!-- Render terminal, SFTP or Settings based on pane type -->
+      {#if pane.type === 'settings'}
+        <Settings />
+      {:else if pane.type === 'terminal'}
         <Terminal {pane} tabId={tab.id} />
       {:else if pane.type === 'sftp'}
         <SFTP {pane} tabId={tab.id} />
