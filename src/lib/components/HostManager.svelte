@@ -636,7 +636,7 @@
   }
 
   input, select {
-    @apply w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-gray-100;
+    @apply w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-900 text-gray-300;
   }
 
   .form-actions {
@@ -679,7 +679,7 @@
 
   /* Textarea */
   textarea {
-    @apply w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-gray-100 font-mono text-sm;
+    @apply w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-900 text-gray-300 font-mono text-sm;
   }
 
   /* Snippets List Section */

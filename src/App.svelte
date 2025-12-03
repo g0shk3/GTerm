@@ -822,18 +822,22 @@
     @apply text-white;
   }
 
-  .tab-rename-input {
-    @apply px-2 py-0.5 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white;
-    @apply border border-blue-500 dark:border-blue-400 rounded;
-    @apply outline-none;
-    min-width: 80px;
-    max-width: 200px;
-  }
+              .tab-rename-input {
 
-  .modern-tab.editing {
-    @apply bg-white dark:bg-gray-800;
-    @apply border-gray-200 dark:border-gray-700;
-    @apply shadow-sm;
+                @apply px-2 py-0.5 text-sm bg-gray-800 text-gray-300;
+
+                @apply border border-blue-500 dark:border-blue-400 rounded;
+
+                @apply outline-none;
+
+                min-width: 80px;
+
+                max-width: 200px;
+
+              }  .modern-tab.editing {
+    @apply bg-gray-800 dark:bg-gray-800;
+    @apply border-gray-700 shadow-sm;
+    @apply outline-none ring-0;
   }
 
   .tab-close-btn {
