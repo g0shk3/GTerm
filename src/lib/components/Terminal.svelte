@@ -3,6 +3,7 @@
   import { get, derived } from 'svelte/store';
   import { invoke } from '@tauri-apps/api/core';
   import { listen } from '@tauri-apps/api/event';
+  import { writeText } from '@tauri-apps/plugin-clipboard-manager';
   import { Terminal as XTerm } from '@xterm/xterm';
   import { FitAddon } from '@xterm/addon-fit';
   import { WebLinksAddon } from '@xterm/addon-web-links';
@@ -10,6 +11,7 @@
   import '@xterm/xterm/css/xterm.css';
   import { tabs, closeTab, closePane, updatePaneConnection, activeTabId } from '../stores/tabs';
   import { getSnippets } from '../stores/snippets';
+  import { settings } from '../stores/settings';
   import Search from './Search.svelte';
 
   export let pane;
@@ -105,6 +107,16 @@
     if (isTerminalVisible()) {
       fitAddon.fit();
     }
+
+    // Copy on select
+    terminal.onSelectionChange(async () => {
+      if (get(settings).autoCopyOnSelect) {
+        const selection = terminal.getSelection();
+        if (selection) {
+          await writeText(selection);
+        }
+      }
+    });
 
     // Add find shortcut
     terminal.attachCustomKeyEventHandler((event) => {
