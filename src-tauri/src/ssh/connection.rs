@@ -118,7 +118,19 @@ impl SshConnection {
                 };
 
                 if let Some(ref mut channel) = *channel_guard {
-                    // FIRST: Try to write pending data (if any)
+                    // FIRST: Always try to receive new data and append it to the write buffer.
+                    // This prevents a deadlock where a blocked write stops new input from being processed.
+                    if let Ok(data) = input_rx.try_recv() {
+                        if let Some(ref mut existing_data) = write_buffer {
+                            existing_data.extend_from_slice(&data);
+                        } else {
+                            write_buffer = Some(data);
+                            write_pos = 0; // Ensure pos is reset for new buffer
+                        }
+                        had_activity = true;
+                    }
+
+                    // SECOND: If we have data in our buffer, try to write it.
                     if let Some(ref data) = write_buffer {
                         if write_pos < data.len() {
                             match channel.write(&data[write_pos..]) {
@@ -129,29 +141,25 @@ impl SshConnection {
                                         // Finished writing this buffer
                                         write_buffer = None;
                                         write_pos = 0;
-                                        let _ = channel.flush();
                                     }
                                 }
                                 Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                                    // No data available for writing
+                                    // Can't write right now, will try again next loop.
                                 }
                                 Err(_) => {
-                                    // Write error, discard buffer
+                                    // Write error, discard buffer to prevent getting stuck
                                     write_buffer = None;
                                     write_pos = 0;
                                 }
                             }
-                        }
-                    } else {
-                        // No pending write, check if there's new data to write
-                        if let Ok(data) = input_rx.try_recv() {
-                            write_buffer = Some(data);
+                        } else {
+                            // This case handles if buffer was present but empty, or pos was somehow out of sync.
+                            write_buffer = None;
                             write_pos = 0;
-                            had_activity = true;
                         }
                     }
 
-                    // SECOND: Try to read data
+                    // THIRD: Try to read data from the remote.
                     match channel.read(&mut read_buffer) {
                         Ok(0) => {
                             // EOF - connection closed
@@ -165,14 +173,16 @@ impl SshConnection {
                             had_activity = true;
                         }
                         Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                            // No data available
+                            // No data available to read right now.
                         }
                         Err(_) => {
-                            // Read error - might be transient, continue
+                            // A read error is more severe, break the loop.
+                            let _ = app_handle.emit(&format!("ssh-closed:{}", session_id), ());
+                            break;
                         }
                     }
                 } else {
-                    // No channel
+                    // No channel, something is wrong, exit.
                     break;
                 }
 

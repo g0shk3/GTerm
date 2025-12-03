@@ -106,12 +106,12 @@ impl LocalConnection {
         let shutdown_rx_clone = shutdown_rx.clone();
 
         // Writer task
-        tokio::spawn(async move {
-            while let Some(data) = input_rx.recv().await {
-                if let Err(_e) = writer_clone.write_all(&data) {
+        tokio::task::spawn_blocking(move || {
+            while let Some(data) = input_rx.blocking_recv() {
+                if writer_clone.write_all(&data).is_err() {
                     break;
                 }
-                if let Err(_e) = writer_clone.flush() {
+                if writer_clone.flush().is_err() {
                     break;
                 }
             }
