@@ -150,6 +150,8 @@
         bind:value={form.name}
         placeholder="My Server"
         required
+        autocomplete="off"
+        spellcheck="false"
       />
     </div>
 
@@ -162,6 +164,8 @@
           bind:value={form.host}
           placeholder="192.168.1.100"
           required
+          autocomplete="off"
+          spellcheck="false"
         />
       </div>
 
@@ -174,6 +178,7 @@
           min="1"
           max="65535"
           required
+          autocomplete="off"
         />
       </div>
     </div>
@@ -186,6 +191,8 @@
         bind:value={form.username}
         placeholder="root"
         required
+        autocomplete="off"
+        spellcheck="false"
       />
     </div>
 

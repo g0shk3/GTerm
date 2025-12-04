@@ -61,6 +61,20 @@
         on:change={e => handleSettingChange('openTabsNextToActive', e.target.checked)}
       />
     </div>
+    <div class="config-item">
+      <div class="config-item-info">
+        <span class="config-item-label">Search direction</span>
+        <span class="config-item-description">Direction to search when pressing Enter in search box</span>
+      </div>
+      <select
+        class="input-field"
+        bind:value={$settings.searchDirection}
+        on:change={e => handleSettingChange('searchDirection', e.target.value)}
+      >
+        <option value="bottomToTop">Bottom to Top (↑)</option>
+        <option value="topToBottom">Top to Bottom (↓)</option>
+      </select>
+    </div>
   </div>
 </div>
 

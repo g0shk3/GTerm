@@ -410,16 +410,47 @@
     }
   }
 
-  function handleTabSwitched() {
+  async function handleTabSwitched() {
     // Refocus and resize terminal when switching to this tab
-    if (terminal && $activeTabId === tabId) {
+    if (terminal && fitAddon && $activeTabId === tabId) {
       // This ensures the terminal is resized correctly when it becomes visible,
       // as fitAddon cannot work on hidden elements.
-      // Wait for the element to become visible before fitting
+      // Use multiple animation frames to ensure DOM is fully updated
       requestAnimationFrame(() => {
-        if (isTerminalVisible()) {
-          handleResize();
-        }
+        requestAnimationFrame(async () => {
+          if (isTerminalVisible() && !isDestroyed) {
+            // Force a fit even if previously fitted
+            try {
+              fitAddon.fit();
+
+              // Wait a tick for fit to complete
+              await new Promise(resolve => setTimeout(resolve, 10));
+
+              // Manually send resize to backend to ensure it's synced
+              const { cols, rows } = terminal;
+              const connectionType = pane.host?.type || 'ssh';
+              const command = connectionType === 'local' ? 'local_resize' : 'ssh_resize';
+
+              try {
+                await invoke(command, {
+                  sessionId: pane.sessionId,
+                  cols,
+                  rows,
+                });
+                console.log(`[Terminal] Resized on tab switch: ${cols}x${rows}`);
+              } catch (error) {
+                console.error('[Terminal] Failed to send resize on tab switch:', error);
+              }
+
+              // Focus the terminal
+              if ($activePaneId === pane.id) {
+                terminal.focus();
+              }
+            } catch (error) {
+              console.error('Failed to fit terminal on tab switch:', error);
+            }
+          }
+        });
       });
     }
   }

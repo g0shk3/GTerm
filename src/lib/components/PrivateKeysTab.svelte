@@ -95,6 +95,8 @@
         bind:value={privateKeyForm.name}
         placeholder="e.g., My Personal Key"
         required
+        autocomplete="off"
+        spellcheck="false"
       />
     </div>
 
@@ -108,6 +110,8 @@
           placeholder="~/.ssh/id_ed25519"
           class="flex-1"
           required
+          autocomplete="off"
+          spellcheck="false"
         />
         <button type="button" class="btn-sm btn-secondary" on:click={handleSelectKeyFile}>
           Browse

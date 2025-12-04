@@ -64,6 +64,8 @@
         bind:value={snippetForm.name}
         placeholder="e.g., ansible, docker, dev-env"
         required
+        autocomplete="off"
+        spellcheck="false"
       />
     </div>
 

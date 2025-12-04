@@ -194,6 +194,7 @@
           placeholder="Search hosts..."
           class="search-input"
           autocomplete="off"
+          spellcheck="false"
         />
         {#if searchQuery}
           <button class="clear-btn" on:click={() => searchQuery = ''} aria-label="Clear search">

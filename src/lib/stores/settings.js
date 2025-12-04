@@ -7,7 +7,8 @@ const defaultSettings = {
   autoStartLocalTerminal: false,
   autoCopyOnSelect: false,
   scrollback: 10000, // Default value
-  openTabsNextToActive: false
+  openTabsNextToActive: false,
+  searchDirection: 'bottomToTop' // 'bottomToTop' or 'topToBottom'
 };
 
 // Merge stored settings with defaults to ensure all keys are present

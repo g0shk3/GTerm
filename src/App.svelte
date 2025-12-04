@@ -217,9 +217,12 @@
   function switchTab(tabId) {
     activeTabId.set(tabId);
     // Dispatch event to refocus terminal after tab switch
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('tabSwitched'));
-    }, 50);
+    // Use requestAnimationFrame to ensure DOM is updated before dispatching
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('tabSwitched'));
+      }, 50);
+    });
   }
 
   function handleTabContextMenu(event, tab) {
@@ -514,6 +517,8 @@
                   on:keydown={handleRenameKeydown}
                   on:blur={confirmRename}
                   on:click|stopPropagation
+                  autocomplete="off"
+                  spellcheck="false"
                 />
               {:else}
                 <span class="tab-label">{tab.title}</span>

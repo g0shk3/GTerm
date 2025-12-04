@@ -1,11 +1,13 @@
 <script>
   import { createEventDispatcher, onMount } from 'svelte';
+  import { settings } from '../stores/settings.js';
 
   export let searchAddon;
   export let containerClassName = '';
 
   let searchTerm = '';
   let searchInput;
+  let useRegex = false;
 
   const dispatch = createEventDispatcher();
 
@@ -13,11 +15,12 @@
     if (!searchTerm) return;
 
     const searchOptions = {
+      regex: useRegex,
       decorations: {
-        matchBackground: '#78716c', // stone-500
-        matchOverviewRuler: '#facc15', // yellow-400
-        activeMatchBackground: '#facc15', // yellow-400
-        activeMatchColorOverviewRuler: '#ffffff',
+        matchBackground: '#4b5563', // gray-600 - бледо маркирани, не изпъкват много
+        matchOverviewRuler: '#6b7280', // gray-500
+        activeMatchBackground: '#60a5fa', // blue-400 - светло синьо за текущия
+        activeMatchColorOverviewRuler: '#60a5fa', // blue-400
       }
     };
 
@@ -38,7 +41,9 @@
     if (event.key === 'Enter') {
       event.preventDefault();
       event.stopPropagation();
-      handleSearch('previous'); // Start from bottom and go upward
+      // Use search direction from settings
+      const direction = $settings.searchDirection === 'bottomToTop' ? 'previous' : 'next';
+      handleSearch(direction);
     }
     if (event.key === 'Escape') {
       event.preventDefault();
@@ -71,7 +76,19 @@
     bind:value={searchTerm}
     placeholder="Search"
     class="search-input"
+    autocomplete="off"
+    spellcheck="false"
+    on:click|stopPropagation
+    on:focus|stopPropagation
+    on:mousedown|stopPropagation
   />
+  <button
+    on:click={() => { useRegex = !useRegex; handleSearch($settings.searchDirection === 'bottomToTop' ? 'previous' : 'next'); }}
+    class="search-button {useRegex ? 'active' : ''}"
+    title="Use Regex"
+  >
+    .*
+  </button>
   <button on:click={() => handleSearch('previous')} class="search-button" title="Previous (↑)">
     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
       <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
@@ -121,5 +138,9 @@
 
   .search-button:disabled {
     @apply text-gray-600 cursor-not-allowed;
+  }
+
+  .search-button.active {
+    @apply bg-blue-600 text-white;
   }
 </style>
