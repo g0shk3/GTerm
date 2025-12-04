@@ -2,6 +2,7 @@
   import { createEventDispatcher, onMount } from 'svelte';
 
   export let searchAddon;
+  export let containerClassName = '';
 
   let searchTerm = '';
   let searchInput;
@@ -25,13 +26,22 @@
     } else {
       searchAddon.findPrevious(searchTerm, searchOptions);
     }
+
+    // HACK: Refocus the input after a search action because xterm.js tends
+    // to steal focus back to the terminal.
+    setTimeout(() => {
+      searchInput.focus();
+    }, 0);
   }
 
   function handleKeyDown(event) {
     if (event.key === 'Enter') {
-      handleSearch('next');
+      event.preventDefault();
+      event.stopPropagation();
+      handleSearch('previous'); // Start from bottom and go upward
     }
     if (event.key === 'Escape') {
+      event.preventDefault();
       handleClose();
     }
   }
@@ -47,12 +57,14 @@
 
   onMount(() => {
     // Focus the input field when the component is mounted
-    searchInput.focus();
+    setTimeout(() => {
+      searchInput.focus();
+    }, 0);
   });
 </script>
 
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-<div class="search-bar-wrapper" on:keydown={handleKeyDown} role="search">
+<div class="search-bar-wrapper {containerClassName}" on:keydown={handleKeyDown} role="search">
   <input
     type="text"
     bind:this={searchInput}
@@ -60,55 +72,54 @@
     placeholder="Search"
     class="search-input"
   />
-  <button on:click={() => handleSearch('previous')} class="search-button">↑</button>
-  <button on:click={() => handleSearch('next')} class="search-button">→</button>
-  <button on:click={handleClose} class="search-button">×</button>
+  <button on:click={() => handleSearch('previous')} class="search-button" title="Previous (↑)">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+      <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
+    </svg>
+  </button>
+  <button on:click={() => handleSearch('next')} class="search-button" title="Next (↓)">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+      <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+    </svg>
+  </button>
+  <button on:click={handleClose} class="search-button" title="Close (Esc)">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+      <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+    </svg>
+  </button>
 </div>
 
 <style>
   .search-bar-wrapper {
-    position: absolute;
-    top: 0;
-    right: 0;
-    z-index: 10;
-    background-color: #1f2937; /* gray-800 */
-    padding: 4px;
-    border-radius: 0 0 0 5px;
-    display: flex;
-    align-items: center;
-    border-left: 1px solid #374151; /* gray-700 */
-    border-bottom: 1px solid #374151; /* gray-700 */
+    @apply absolute top-3 right-5 z-10 flex items-center gap-1;
+    @apply bg-gray-900 bg-opacity-80 backdrop-blur-sm;
+    @apply border border-gray-700 rounded-lg shadow-2xl;
+    @apply p-1.5;
+    transition: all 0.2s ease-in-out;
   }
 
   .search-input {
-    background-color: #111827; /* gray-900 */
-    border: 1px solid #374151; /* gray-700 */
-    color: #ffffff;
-    padding: 2px 4px;
-    width: 180px;
-  }
-
-  .search-input:focus {
-    outline: none;
-    border-color: #4b5563; /* gray-600 */
+    @apply bg-gray-800 border border-gray-600;
+    @apply text-white text-sm rounded-md;
+    @apply px-3 py-1.5;
+    @apply w-64;
+    @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
   }
 
   .search-button {
-    background-color: transparent;
-    border: none;
-    color: #ffffff;
-    cursor: pointer;
-    padding: 0 8px;
-    font-size: 16px;
-    line-height: 1;
+    @apply flex items-center justify-center;
+    @apply w-9 h-9;
+    @apply bg-transparent border-0;
+    @apply text-gray-400 rounded-md;
+    @apply cursor-pointer;
+    @apply transition-colors duration-150;
   }
 
   .search-button:hover {
-    background-color: #374151; /* gray-700 */
+    @apply bg-gray-700 text-white;
   }
 
   .search-button:disabled {
-    color: #6b7280; /* gray-500 */
-    cursor: default;
+    @apply text-gray-600 cursor-not-allowed;
   }
 </style>
