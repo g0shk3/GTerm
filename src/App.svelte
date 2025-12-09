@@ -366,8 +366,16 @@
     // Cmd+K - Clear terminal
     if (e.metaKey && e.code === 'KeyK') {
       e.preventDefault();
-      // Dispatch global event to clear terminal
-      window.dispatchEvent(new CustomEvent('clearTerminal'));
+      const currentTab = $tabs.find(t => t.id === $activeTabId);
+      if (currentTab && currentTab.activePaneId) {
+        // Dispatch targeted event to clear a specific terminal
+        window.dispatchEvent(new CustomEvent('clearTerminal', {
+          detail: {
+            tabId: currentTab.id,
+            paneId: currentTab.activePaneId
+          }
+        }));
+      }
       return;
     }
 

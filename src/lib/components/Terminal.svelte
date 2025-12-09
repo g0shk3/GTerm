@@ -404,9 +404,13 @@
     }
   }
 
-  function handleClearTerminal() {
+  function handleClearTerminal(event) {
     if (terminal) {
-      terminal.clear();
+      const { detail } = event;
+      // If the event is for this terminal, clear it
+      if (detail && detail.tabId === tabId && detail.paneId === pane.id) {
+        terminal.clear();
+      }
     }
   }
 
