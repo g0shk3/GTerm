@@ -8,7 +8,8 @@ const defaultSettings = {
   autoCopyOnSelect: false,
   scrollback: 10000, // Default value
   openTabsNextToActive: false,
-  searchDirection: 'bottomToTop' // 'bottomToTop' or 'topToBottom'
+  searchDirection: 'bottomToTop', // 'bottomToTop' or 'topToBottom'
+  rememberWindowSize: true
 };
 
 // Merge stored settings with defaults to ensure all keys are present

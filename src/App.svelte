@@ -1,6 +1,6 @@
 <script>
-  import { onMount, onDestroy } from 'svelte';
-  import { getCurrentWindow } from '@tauri-apps/api/window';
+  import { onMount } from 'svelte';
+  import { getCurrentWindow, PhysicalSize, PhysicalPosition } from '@tauri-apps/api/window';
   import { check } from '@tauri-apps/plugin-updater';
   import { ask } from '@tauri-apps/plugin-dialog';
   import { relaunch } from '@tauri-apps/plugin-process';
@@ -36,6 +36,15 @@
   // Separate array for tab display order (for drag and drop)
   let tabsDisplayOrder = [];
 
+  // Debounce utility
+  function debounce(func, timeout = 300) {
+    let timer;
+    return (...args) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => { func.apply(this, args); }, timeout);
+    };
+  }
+
   // Close context menu when clicking anywhere
   const handleClick = () => {
     tabContextMenu = null;
@@ -43,6 +52,46 @@
   };
 
   onMount(async () => {
+    const appWindow = getCurrentWindow();
+    let unlistenResize;
+    let unlistenMoved;
+
+    // --- Restore window size and position ---
+    if ($settings.rememberWindowSize) {
+      const savedState = localStorage.getItem('window_state');
+      if (savedState) {
+        try {
+          const { width, height, x, y } = JSON.parse(savedState);
+          if (width && height && x !== undefined && y !== undefined) {
+            await appWindow.setSize(new PhysicalSize(width, height));
+            await appWindow.setPosition(new PhysicalPosition(x, y));
+          }
+        } catch (e) {
+            console.error("Failed to restore window state:", e);
+        }
+      }
+
+      // --- Save window state on change ---
+      const saveWindowState = debounce(async () => {
+        try {
+            const size = await appWindow.innerSize();
+            const position = await appWindow.outerPosition(); // Use outerPosition for consistency
+            const state = {
+              width: size.width,
+              height: size.height,
+              x: position.x,
+              y: position.y
+            };
+            localStorage.setItem('window_state', JSON.stringify(state));
+        } catch(e) {
+            console.error("Failed to save window state:", e);
+        }
+      }, 500);
+
+      unlistenResize = await appWindow.onResized(saveWindowState);
+      unlistenMoved = await appWindow.onMoved(saveWindowState);
+    }
+
     // Initialize theme
     if ($theme === 'dark') {
       document.documentElement.classList.add('dark');
@@ -91,19 +140,15 @@
     }
 
     document.addEventListener('click', handleClick);
-
-    // Register keyboard shortcuts - премахни стари, ако има
-    document.removeEventListener('keydown', keyboardHandler);
     document.addEventListener('keydown', keyboardHandler);
 
     return () => {
+      // Cleanup all listeners
       document.removeEventListener('click', handleClick);
+      document.removeEventListener('keydown', keyboardHandler);
+      if (unlistenResize) unlistenResize();
+      if (unlistenMoved) unlistenMoved();
     };
-  });
-
-  onDestroy(() => {
-    // Cleanup keyboard shortcuts
-    document.removeEventListener('keydown', keyboardHandler);
   });
 
   function handleNewConnection(event) {

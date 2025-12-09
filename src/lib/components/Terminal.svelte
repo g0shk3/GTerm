@@ -381,6 +381,11 @@
   }
 
   function handleResize() {
+    // Only resize if this terminal is in the active tab
+    if ($activeTabId !== tabId) {
+      return;
+    }
+
     if (fitAddon && terminal && isTerminalVisible()) {
       // Use requestAnimationFrame to ensure DOM has been updated
       if (resizeAnimationFrameId) {

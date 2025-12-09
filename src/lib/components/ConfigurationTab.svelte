@@ -33,6 +33,17 @@
         on:change={e => handleSettingChange('autoCopyOnSelect', e.target.checked)}
       />
     </div>
+
+    <div class="config-item">
+      <div class="config-item-info">
+        <span class="config-item-label">Remember window size and position</span>
+        <span class="config-item-description">Save and restore the window dimensions between sessions</span>
+      </div>
+      <Switch
+        checked={$settings.rememberWindowSize}
+        on:change={e => handleSettingChange('rememberWindowSize', e.target.checked)}
+      />
+    </div>
   </div>
 
   <div class="config-section">
