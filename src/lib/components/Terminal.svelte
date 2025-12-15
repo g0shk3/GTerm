@@ -29,6 +29,12 @@
   let executingSnippet = false;
   let isDestroyed = false;
   let resizeAnimationFrameId = null;
+  let inputBuffer = '';
+  let inputFlushTimeout = null;
+  let isSendingInput = false;
+  let lastOutputTime = Date.now();
+  let lastOutputBuffer = '';
+  let isInteractiveShell = true;
 
   const activePaneId = derived(tabs, $tabs => {
     const currentTab = $tabs.find(t => t.id === tabId);
@@ -92,6 +98,10 @@
       drawBoldTextInBrightColors: true,
       rightClickSelectsWord: true,
       smoothScrollDuration: 0, // Disable smooth scrolling for better performance
+      // Disable bracket paste mode to prevent escape sequences from appearing
+      // When enabled, xterm sends ESC[200~ and ESC[201~ around pasted text
+      // but this causes visual artifacts if the remote shell doesn't support it
+      bracketedPasteMode: false,
     });
 
     fitAddon = new FitAddon();
@@ -154,24 +164,81 @@
       return true;
     });
 
-    // Handle user input
-    terminal.onData(async (data) => {
-      if (isDestroyed) return;
-      // Block user input while executing snippet to prevent race condition
-      if (executingSnippet) {
-        return;
-      }
+    // Flush buffered input to backend
+    async function flushInputBuffer() {
+      if (isDestroyed || isSendingInput || !inputBuffer) return;
+
+      const dataToSend = inputBuffer;
+      inputBuffer = '';
+      isSendingInput = true;
 
       try {
         const connectionType = pane.host?.type || 'ssh';
         const command = connectionType === 'local' ? 'local_send_input' : 'ssh_send_input';
         await invoke(command, {
           sessionId: pane.sessionId,
-          data: data,
+          data: dataToSend,
         });
       } catch (error) {
         console.error('[Terminal] Failed to send input:', error);
+      } finally {
+        isSendingInput = false;
+        // If more data accumulated while we were sending, schedule another flush
+        if (inputBuffer) {
+          if (inputFlushTimeout) clearTimeout(inputFlushTimeout);
+          inputFlushTimeout = setTimeout(flushInputBuffer, 0);
+        }
       }
+    }
+
+    // Handle user input with buffering for paste operations
+    terminal.onData((data) => {
+      if (isDestroyed) return;
+      // Block user input while executing snippet to prevent race condition
+      if (executingSnippet) {
+        return;
+      }
+
+      // For multi-line paste operations, use smart detection
+      if (data.length > 50 && data.includes('\r')) {
+        // If we're in an interactive shell, use line-by-line with delay
+        // Otherwise (in editor/file), use bulk paste
+        if (isInteractiveShell) {
+          const lines = data.split('\r');
+          let delay = 0;
+
+          lines.forEach((line, index) => {
+            setTimeout(() => {
+              if (isDestroyed) return;
+              inputBuffer += line;
+              if (index < lines.length - 1) {
+                inputBuffer += '\r';
+              }
+              flushInputBuffer();
+            }, delay);
+            delay += 10; // 20ms delay between lines in interactive shells
+          });
+          return;
+        } else {
+          // Bulk paste for editors/files - send everything at once
+          inputBuffer += data;
+          flushInputBuffer();
+          return;
+        }
+      }
+
+      // Add data to buffer
+      inputBuffer += data;
+
+      // Clear existing timeout
+      if (inputFlushTimeout) {
+        clearTimeout(inputFlushTimeout);
+      }
+
+      // For single character input (typing), flush immediately
+      // For paste operations (multiple characters at once), use small delay to batch
+      const flushDelay = data.length === 1 ? 0 : 10;
+      inputFlushTimeout = setTimeout(flushInputBuffer, flushDelay);
     });
 
     // Handle terminal resize
@@ -194,11 +261,60 @@
     const connectionType = pane.host?.type || 'ssh';
     const eventPrefix = connectionType === 'local' ? 'terminal' : 'ssh';
 
+    // Detect if we're in an interactive shell based on output
+    function detectInteractiveShell(text) {
+      // Keep only last 500 chars for detection
+      lastOutputBuffer = (lastOutputBuffer + text).slice(-500);
+
+      // Interactive shell indicators (prompts ending with these)
+      const shellPromptPatterns = [
+        /[\$#>]\s*$/,           // bash/zsh: $ # >
+        /[=#-]\s*$/,            // PostgreSQL: =# -# =#
+        /mysql>\s*$/,           // MySQL
+        /mongodb>\s*$/,         // MongoDB
+        /redis>\s*$/,           // Redis
+        /\w+@\w+[:#\$]\s*$/,   // user@host:$ or user@host#
+      ];
+
+      // File editor indicators (we're NOT in interactive shell)
+      const editorIndicators = [
+        '-- INSERT --',         // vim insert mode
+        '-- VISUAL',            // vim visual mode
+        'GNU nano',             // nano editor
+        '^G Get Help',          // nano help
+      ];
+
+      // Check for editor indicators first
+      for (const indicator of editorIndicators) {
+        if (lastOutputBuffer.includes(indicator)) {
+          return false;
+        }
+      }
+
+      // Check for shell prompts
+      for (const pattern of shellPromptPatterns) {
+        if (pattern.test(lastOutputBuffer)) {
+          return true;
+        }
+      }
+
+      // Default to previous state if unclear
+      return isInteractiveShell;
+    }
+
     // Listen for terminal output
     unlistenPromises.push(listen(`${eventPrefix}-output:${pane.sessionId}`, (event) => {
       // event.payload is number[]
       if (terminal) {
-        terminal.write(new Uint8Array(event.payload));
+        const data = new Uint8Array(event.payload);
+        terminal.write(data);
+
+        // Update last output time for smart paste
+        lastOutputTime = Date.now();
+
+        // Detect interactive shell vs editor
+        const text = new TextDecoder().decode(data);
+        isInteractiveShell = detectInteractiveShell(text);
       }
     }));
 
@@ -470,6 +586,11 @@
     // Cancel any pending animation frames
     if (resizeAnimationFrameId) {
       cancelAnimationFrame(resizeAnimationFrameId);
+    }
+
+    // Cancel any pending input flush
+    if (inputFlushTimeout) {
+      clearTimeout(inputFlushTimeout);
     }
 
     window.removeEventListener('resize', handleResize);
